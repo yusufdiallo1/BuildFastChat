@@ -23,6 +23,7 @@
     "vite": "^7.1.12"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.76.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-router-dom": "^7.9.4"
