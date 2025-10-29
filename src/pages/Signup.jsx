@@ -58,14 +58,11 @@ function Signup() {
     'Belgrade',
     'Berlin',
     'Birmingham',
-    'Birmingham',
     'Bishkek',
     'Bismarck',
     'Bogotá',
     'Bologna',
     'Boise',
-    'Bologna',
-    'Boston',
     'Boston',
     'Bradford',
     'Brasília',
@@ -93,7 +90,6 @@ function Signup() {
     'Chittagong',
     'Cologne',
     'Colombo',
-    'Columbus',
     'Columbus',
     'Concord',
     'Copenhagen',
@@ -146,13 +142,11 @@ function Signup() {
     'Honolulu',
     'Houston',
     'Hyderabad',
-    'Hyderabad',
     'Ibadan',
     'Indianapolis',
     'Innsbruck',
     'Irbid',
     'Islamabad',
-    'Istanbul',
     'Istanbul',
     'Izmir',
     'Jackson',
@@ -233,7 +227,6 @@ function Signup() {
     'Nagoya',
     'Nairobi',
     'Naples',
-    'Nashville',
     'Nashville',
     'New Delhi',
     'New York',
@@ -579,8 +572,8 @@ function Signup() {
               className="w-full px-5 py-4 frosted-glass btn-rounded text-white focus-ring disabled:opacity-50 appearance-none"
             >
               <option value="">Select a city</option>
-              {cities.map((cityName) => (
-                <option key={cityName} value={cityName} className="bg-slate-800">
+              {cities.map((cityName, index) => (
+                <option key={`${cityName}-${index}`} value={cityName} className="bg-slate-800">
                   {cityName}
                 </option>
               ))}

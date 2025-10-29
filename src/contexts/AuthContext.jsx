@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { usePresence } from '../hooks/usePresence'
+import { initSocket, disconnectSocket } from '../lib/socket'
 
 const AuthContext = createContext(null)
 
@@ -73,6 +74,19 @@ const AuthProviderInner = ({ children }) => {
       subscription.unsubscribe()
     }
   }, [])
+
+  // Initialize socket when user is logged in
+  useEffect(() => {
+    if (user?.id) {
+      initSocket(user.id)
+    } else {
+      disconnectSocket()
+    }
+    
+    return () => {
+      disconnectSocket()
+    }
+  }, [user?.id])
 
   useEffect(() => {
     if (!user) {

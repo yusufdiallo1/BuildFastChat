@@ -7,7 +7,9 @@ import MessageInput from './MessageInput'
 import GroupSettingsModal from './GroupSettingsModal'
 import MessageSearch from './MessageSearch'
 import MuteModal from './MuteModal'
+import VoiceCallModal from './VoiceCallModal'
 import { archiveConversation, unarchiveConversation, isConversationArchived } from '../utils/archiveHelpers'
+import { useVoiceCall } from '../hooks/useVoiceCall'
 
 function MainChat({ conversationId }) {
   const [searchParams] = useSearchParams()
@@ -26,7 +28,21 @@ function MainChat({ conversationId }) {
   const [targetMessageId, setTargetMessageId] = useState(null)
   const [showMuteModal, setShowMuteModal] = useState(false)
   const [isArchived, setIsArchived] = useState(false)
-  const { user } = useAuth()
+  const { user, userProfile } = useAuth()
+
+  // Voice call functionality
+  const {
+    callState,
+    otherUser: callOtherUser,
+    isMuted,
+    callDuration,
+    connectionError,
+    initiateCall,
+    acceptCall,
+    rejectCall,
+    endCall,
+    toggleMute
+  } = useVoiceCall(user?.id, userProfile?.username || user?.email || 'User')
 
   useEffect(() => {
     const messageId = searchParams.get('message')
@@ -511,7 +527,24 @@ function MainChat({ conversationId }) {
               'Group chat'
             ) : (
               <>
-                {otherUser?.is_online ? (
+                {callState === 'active' || callState === 'calling' ? (
+                  <>
+                    <span className="relative inline-flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                      <span className="absolute w-2 h-2 bg-green-500 rounded-full"></span>
+                    </span>
+                    {callState === 'active' ? (
+                      <span className="text-green-400 flex items-center space-x-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                        </svg>
+                        <span>On call • {callDuration}</span>
+                      </span>
+                    ) : (
+                      <span className="text-blue-400">Calling...</span>
+                    )}
+                  </>
+                ) : otherUser?.is_online ? (
                   <>
                     <span className="relative inline-flex items-center">
                       <span className="w-2 h-2 bg-green-500 rounded-full animate-ping"></span>
@@ -545,6 +578,25 @@ function MainChat({ conversationId }) {
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Voice Call Button - Only for one-on-one chats */}
+          {!isGroupChat && otherUser && !isBlocked && !isBlockedBy && (
+            <button
+              onClick={() => {
+                initiateCall(
+                  otherUser.id,
+                  otherUser.username,
+                  otherUser.profile_picture
+                )
+              }}
+              className="text-gray-400 hover:text-white transition-colors p-2 w-10 h-10 rounded-full hover:bg-gray-700 flex items-center justify-center"
+              title="Start voice call"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+            </button>
+          )}
+          
           {/* Mute Button */}
           <button
             onClick={() => setShowMuteModal(true)}
@@ -723,6 +775,21 @@ function MainChat({ conversationId }) {
           conversationName={displayName}
           onClose={() => setShowMuteModal(false)}
           onMuteSuccess={() => setShowMuteModal(false)}
+        />
+      )}
+
+      {/* Voice Call Modal */}
+      {callState && (
+        <VoiceCallModal
+          callState={callState}
+          otherUser={callOtherUser}
+          isMuted={isMuted}
+          callDuration={callDuration}
+          connectionError={connectionError}
+          onAccept={() => acceptCall()}
+          onReject={() => rejectCall()}
+          onEnd={() => endCall()}
+          onToggleMute={() => toggleMute()}
         />
       )}
     </main>
