@@ -455,7 +455,7 @@ Your API key is configured and ready to use.`)
               <div className="mb-6 hero-logo" style={{ animation: 'fade-in-up 0.6s ease-out 0.1s forwards' }}>
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
                   <span className="gradient-text">BuildFast Chat</span>
-            </h1>
+                </h1>
               </div>
 
               {/* Tagline/Headline */}
