@@ -432,6 +432,8 @@ Your API key is configured and ready to use.`)
 
       {/* Hero Section - Redesigned */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden" style={{ paddingTop: '100px' }}>
+        {/* Deployment timestamp - hidden but helps verify deployment */}
+        <meta name="deployment-version" content="v2.0.0-new-design" />
         {/* Animated Gradient Background */}
         <div className="absolute inset-0 hero-gradient" style={{
           background: 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 25%, var(--accent) 50%, var(--primary-light) 75%, var(--primary) 100%)',
