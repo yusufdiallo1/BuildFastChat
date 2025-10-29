@@ -1,14 +1,16 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import UserSidebar from './UserSidebar'
 import NewChatModal from './NewChatModal'
 import NewGroupModal from './NewGroupModal'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { getArchivedCount } from '../utils/archiveHelpers'
 
-function Sidebar({ selectedConversationId, onConversationSelect }) {
+function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch, showArchived = false, onShowArchivedChange }) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
+  const [archivedCount, setArchivedCount] = useState(0)
   const { user, userProfile } = useAuth()
   const navigate = useNavigate()
 
@@ -26,13 +28,46 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
   }
 
   // Get avatar image or initials
+  // Fetch archived count
+  useEffect(() => {
+    if (!user) return
+
+    const fetchCount = async () => {
+      const count = await getArchivedCount(user.id)
+      setArchivedCount(count)
+    }
+
+    fetchCount()
+    
+    // Subscribe to archive changes
+    const channel = supabase
+      .channel('archived-count')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'conversation_participants',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          fetchCount()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [user])
+
   const getAvatarContent = () => {
     if (userProfile?.profile_picture && userProfile.profile_picture.trim() !== '') {
       return (
         <img 
           src={userProfile.profile_picture} 
           alt={userProfile.username || 'Avatar'} 
-          className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+          className="profile-picture avatar w-10 h-10 rounded-full object-cover flex-shrink-0"
           onError={(e) => {
             e.target.style.display = 'none'
           }}
@@ -43,7 +78,7 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
       ? userProfile.username.substring(0, 2).toUpperCase()
       : user?.email?.substring(0, 2).toUpperCase() || 'U'
     return (
-      <div className="bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
+      <div className="avatar bg-blue-600 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0">
         <span className="text-white font-semibold text-sm">{initials}</span>
       </div>
     )
@@ -51,16 +86,29 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
 
   return (
     <>
-      <aside className="w-64 bg-[#1f2937] border-r border-gray-700 flex flex-col">
+      <aside className="w-64 border-r flex flex-col transition-colors duration-300" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-white">Conversations</h2>
+            <h2 className="text-xl font-semibold gradient-text">Conversations</h2>
+            <button
+              onClick={onGlobalSearch}
+              className="p-2 rounded-lg transition-colors"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => e.target.style.color = 'var(--text-secondary)'}
+              onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+              title="Global Search (Ctrl+K)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
           <div className="flex flex-col space-y-2">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center space-x-2"
+              className="w-full frosted-glass btn-rounded py-2 px-4 font-medium text-sm flex items-center justify-center space-x-2 transition-colors duration-300"
+              style={{ color: 'var(--text-primary)' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -69,7 +117,8 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
             </button>
             <button
               onClick={() => setIsGroupModalOpen(true)}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium text-sm transition-colors flex items-center justify-center space-x-2"
+              className="w-full frosted-glass btn-rounded py-2 px-4 font-medium text-sm flex items-center justify-center space-x-2 transition-colors duration-300"
+              style={{ color: 'var(--text-primary)' }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -79,25 +128,61 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
           </div>
         </div>
 
+        {/* Navigation Tabs */}
+        <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
+          <div className="flex space-x-1">
+            <button
+              onClick={() => onShowArchivedChange?.(false)}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                !showArchived ? 'frosted-glass' : ''
+              }`}
+              style={{
+                color: !showArchived ? 'var(--text-primary)' : 'var(--text-muted)',
+                backgroundColor: !showArchived ? 'var(--surface-light)' : 'transparent'
+              }}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => onShowArchivedChange?.(true)}
+              className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors relative ${
+                showArchived ? 'frosted-glass' : ''
+              }`}
+              style={{
+                color: showArchived ? 'var(--text-primary)' : 'var(--text-muted)',
+                backgroundColor: showArchived ? 'var(--surface-light)' : 'transparent'
+              }}
+            >
+              Archived
+              {archivedCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {archivedCount > 99 ? '99+' : archivedCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Conversation List */}
         <UserSidebar 
           selectedConversationId={selectedConversationId}
           onConversationSelect={onConversationSelect}
+          showArchived={showArchived}
         />
 
         {/* User Info Section at Bottom */}
         {user && (
-          <div className="p-4 border-t border-gray-700 mt-auto">
+          <div className="p-4 border-t mt-auto transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
             <div className="flex items-center space-x-3 mb-3">
               {/* User Avatar */}
               {getAvatarContent()}
               
               {/* User Info */}
               <div className="flex-1 min-w-0">
-                <div className="text-white font-medium text-sm truncate">
+                <div className="font-medium text-sm truncate transition-colors duration-300" style={{ color: 'var(--text-secondary)' }}>
                   {userProfile?.username || user.email}
                 </div>
-                <div className="flex items-center space-x-2 text-xs text-gray-400">
+                <div className="flex items-center space-x-2 text-xs text-emerald-400">
                   {/* Active Status with Glowing Dot */}
                   <div className="relative">
                     <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -110,6 +195,52 @@ function Sidebar({ selectedConversationId, onConversationSelect }) {
 
             {/* Navigation */}
             <nav className="flex flex-col space-y-2">
+              <button
+                onClick={() => {
+                  console.log('Navigating to settings page...')
+                  navigate('/settings')
+                }}
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Settings</span>
+              </button>
+              <button
+                onClick={() => {
+                  console.log('Navigating to blocked users page...')
+                  navigate('/blocked-users')
+                }}
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                </svg>
+                <span>Blocked Users</span>
+              </button>
+              <button
+                onClick={() => {
+                  console.log('Navigating to scheduled messages page...')
+                  navigate('/scheduled-messages')
+                }}
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
+                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Scheduled Messages</span>
+              </button>
               <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 text-red-400 hover:text-red-300 px-2 py-2 rounded transition-colors text-sm"

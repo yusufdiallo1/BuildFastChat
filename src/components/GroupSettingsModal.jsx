@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Portal from './Portal'
+import ChatAppearanceModal from './ChatAppearanceModal'
 
 function GroupSettingsModal({ conversationId, conversation, currentUserId, onClose }) {
+  const [showChatAppearance, setShowChatAppearance] = useState(false)
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -13,9 +15,14 @@ function GroupSettingsModal({ conversationId, conversation, currentUserId, onClo
   const [groupName, setGroupName] = useState(conversation?.name || '')
   const [isSavingName, setIsSavingName] = useState(false)
   const [addingMembers, setAddingMembers] = useState(false)
+  const [disappearingDuration, setDisappearingDuration] = useState(conversation?.disappearing_messages_duration || null)
+  const [isSavingDisappearing, setIsSavingDisappearing] = useState(false)
   const navigate = useNavigate()
 
   const isCreator = currentUserId === conversation?.created_by
+  // For DMs, both participants can change disappearing messages setting
+  // For group chats, only creator/admin can change
+  const canChangeDisappearing = conversation?.is_group_chat ? isCreator : true
 
   useEffect(() => {
     fetchMembers()
@@ -191,6 +198,30 @@ function GroupSettingsModal({ conversationId, conversation, currentUserId, onClo
     }
   }
 
+  const handleSaveDisappearing = async () => {
+    if (isSavingDisappearing) return
+
+    setIsSavingDisappearing(true)
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .update({ disappearing_messages_duration: disappearingDuration })
+        .eq('id', conversationId)
+
+      if (error) throw error
+
+      // Update conversation object
+      conversation.disappearing_messages_duration = disappearingDuration
+      alert('Disappearing messages setting updated successfully!')
+      // Trigger parent refresh by closing and reopening (will happen via onClose callback)
+    } catch (error) {
+      console.error('Error updating disappearing messages setting:', error)
+      alert('Failed to update disappearing messages setting')
+    } finally {
+      setIsSavingDisappearing(false)
+    }
+  }
+
   const handleLeaveGroup = async () => {
     if (!window.confirm('Are you sure you want to leave this group?')) return
 
@@ -233,7 +264,9 @@ function GroupSettingsModal({ conversationId, conversation, currentUserId, onClo
         >
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-700">
-            <h2 className="text-2xl font-bold text-white">Group Settings</h2>
+            <h2 className="text-2xl font-bold text-white">
+              {conversation?.is_group_chat ? 'Group Settings' : 'Conversation Settings'}
+            </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition-colors"
@@ -293,7 +326,99 @@ function GroupSettingsModal({ conversationId, conversation, currentUserId, onClo
               )}
             </section>
 
-            {/* Members Section */}
+            {/* Disappearing Messages Section */}
+            <section>
+              <h3 className="text-lg font-semibold text-white mb-4">Disappearing Messages</h3>
+              <div className="bg-gray-700 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-4">
+                  Messages will automatically delete after the selected duration
+                </p>
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-3 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      name="disappearingDuration"
+                      value="off"
+                      checked={disappearingDuration === null}
+                      onChange={() => setDisappearingDuration(null)}
+                      className="form-radio h-4 w-4 text-blue-600"
+                      disabled={!canChangeDisappearing || isSavingDisappearing}
+                    />
+                    <span>Off</span>
+                  </label>
+                  <label className="flex items-center space-x-3 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      name="disappearingDuration"
+                      value="24"
+                      checked={disappearingDuration === 24}
+                      onChange={() => setDisappearingDuration(24)}
+                      className="form-radio h-4 w-4 text-blue-600"
+                      disabled={!canChangeDisappearing || isSavingDisappearing}
+                    />
+                    <span>24 hours</span>
+                  </label>
+                  <label className="flex items-center space-x-3 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      name="disappearingDuration"
+                      value="168"
+                      checked={disappearingDuration === 168}
+                      onChange={() => setDisappearingDuration(168)}
+                      className="form-radio h-4 w-4 text-blue-600"
+                      disabled={!canChangeDisappearing || isSavingDisappearing}
+                    />
+                    <span>7 days</span>
+                  </label>
+                  <label className="flex items-center space-x-3 text-white cursor-pointer">
+                    <input
+                      type="radio"
+                      name="disappearingDuration"
+                      value="2160"
+                      checked={disappearingDuration === 2160}
+                      onChange={() => setDisappearingDuration(2160)}
+                      className="form-radio h-4 w-4 text-blue-600"
+                      disabled={!canChangeDisappearing || isSavingDisappearing}
+                    />
+                    <span>90 days</span>
+                  </label>
+                </div>
+                {canChangeDisappearing && (
+                  <button
+                    onClick={handleSaveDisappearing}
+                    disabled={isSavingDisappearing || disappearingDuration === (conversation?.disappearing_messages_duration || null)}
+                    className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isSavingDisappearing ? 'Saving...' : 'Save Settings'}
+                  </button>
+                )}
+                {!canChangeDisappearing && conversation?.is_group_chat && (
+                  <p className="mt-4 text-gray-500 text-sm">Only group admins can change this setting</p>
+                )}
+              </div>
+            </section>
+
+            {/* Chat Appearance Section */}
+            <section>
+              <h3 className="text-lg font-semibold text-white mb-4">Chat Appearance</h3>
+              <div className="bg-gray-700 rounded-lg p-4">
+                <p className="text-gray-400 text-sm mb-4">
+                  Customize the look and feel of this chat with backgrounds, colors, and bubble styles
+                </p>
+                <button
+                  onClick={() => setShowChatAppearance(true)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                  </svg>
+                  <span>Customize Chat Appearance</span>
+                </button>
+              </div>
+            </section>
+
+            {/* Members Section - Only for group chats */}
+            {conversation?.is_group_chat && (
             <section>
               <h3 className="text-lg font-semibold text-white mb-4">Members ({members.length})</h3>
               
@@ -410,19 +535,31 @@ function GroupSettingsModal({ conversationId, conversation, currentUserId, onClo
                 </div>
               )}
             </section>
+            )}
           </div>
 
-          {/* Footer */}
-          <div className="p-6 border-t border-gray-700">
-            <button
-              onClick={handleLeaveGroup}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
-            >
-              Leave Group
-            </button>
-          </div>
+          {/* Footer - Only for group chats */}
+          {conversation?.is_group_chat && (
+            <div className="p-6 border-t border-gray-700">
+              <button
+                onClick={handleLeaveGroup}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg font-medium transition-colors"
+              >
+                Leave Group
+              </button>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Chat Appearance Modal */}
+      {showChatAppearance && (
+        <ChatAppearanceModal
+          conversationId={conversationId}
+          isGroupChat={conversation?.is_group_chat}
+          onClose={() => setShowChatAppearance(false)}
+        />
+      )}
     </Portal>
   )
 }

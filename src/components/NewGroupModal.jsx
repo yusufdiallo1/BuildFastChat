@@ -169,19 +169,19 @@ function NewGroupModal({ onClose }) {
   return (
     <Portal>
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         onClick={onClose}
       >
         <div 
-          className="bg-[#1f2937] rounded-lg shadow-xl w-full max-w-md max-h-[85vh] flex flex-col"
+          className="frosted-glass rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col border border-slate-600"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-700">
-            <h2 className="text-2xl font-bold text-white">New Group</h2>
+          <div className="flex items-center justify-between p-6 border-b border-slate-600">
+            <h2 className="text-2xl font-bold gradient-text">New Group</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-slate-400 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-700"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -190,8 +190,8 @@ function NewGroupModal({ onClose }) {
           </div>
 
           {/* Group Name Input */}
-          <div className="p-6 border-b border-gray-700">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+          <div className="p-6 border-b border-slate-600">
+            <label className="block text-sm font-medium text-slate-300 mb-3">
               Group Name
             </label>
             <input
@@ -199,24 +199,24 @@ function NewGroupModal({ onClose }) {
               placeholder="Enter group name..."
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring"
               autoFocus
             />
           </div>
 
           {/* Selected Members Display */}
           {selectedMembers.length > 0 && (
-            <div className="px-6 pt-4 border-b border-gray-700 max-h-32 overflow-y-auto">
-              <div className="flex flex-wrap gap-2 pb-4">
+            <div className="px-6 pt-4 border-b border-slate-600 max-h-32 overflow-y-auto">
+              <div className="flex flex-wrap gap-3 pb-4">
                 {selectedMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center space-x-2 bg-blue-600 rounded-lg px-3 py-2"
+                    className="flex items-center space-x-2 frosted-glass btn-rounded px-4 py-2"
                   >
                     <span className="text-white text-sm font-medium">{member.username}</span>
                     <button
                       onClick={() => handleRemoveMember(member.id)}
-                      className="text-white hover:text-red-200 transition-colors"
+                      className="text-slate-400 hover:text-red-300 transition-colors p-1 rounded-full hover:bg-slate-700"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -229,8 +229,8 @@ function NewGroupModal({ onClose }) {
           )}
 
           {/* Search Box */}
-          <div className="p-6 border-b border-gray-700">
-            <label className="block text-sm font-medium text-gray-300 mb-2">
+          <div className="p-6 border-b border-slate-600">
+            <label className="block text-sm font-medium text-slate-300 mb-3">
               Add Members
             </label>
             <input
@@ -238,55 +238,72 @@ function NewGroupModal({ onClose }) {
               placeholder="Search by username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring"
             />
           </div>
 
           {/* Search Results */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             {loading && (
-              <div className="text-center text-gray-400 py-8">
-                <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full" />
+              <div className="text-center text-slate-400 py-8">
+                <div className="w-8 h-8 mx-auto frosted-glass btn-rounded flex items-center justify-center">
+                  <div className="animate-spin inline-block w-6 h-6 border-2 border-current border-t-transparent rounded-full" />
+                </div>
               </div>
             )}
 
             {!loading && searchQuery.trim().length >= 2 && searchResults.length === 0 && (
-              <div className="text-center text-gray-400 py-8">
-                No users found
+              <div className="text-center text-slate-400 py-8">
+                <div className="w-16 h-16 mx-auto mb-4 frosted-glass btn-rounded flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.29-1.009-5.824-2.57M15 6.334A7.962 7.962 0 0112 4c-2.34 0-4.29 1.009-5.824 2.57" />
+                  </svg>
+                </div>
+                <p>No users found</p>
               </div>
             )}
 
             {!loading && searchResults.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {searchResults.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg hover:bg-gray-600 transition-colors cursor-pointer"
+                    className="frosted-glass btn-rounded p-4 hover-lift transition-all duration-200 cursor-pointer"
                     onClick={() => handleAddMember(user)}
                   >
-                    {/* Profile Picture or Initials */}
-                    {user.profile_picture ? (
-                      <img
-                        src={user.profile_picture}
-                        alt={user.username}
-                        className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="bg-blue-600 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-semibold text-sm">
-                          {getInitials(user.username)}
-                        </span>
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-4">
+                      {/* Profile Picture or Initials */}
+                      {user.profile_picture ? (
+                        <img
+                          src={user.profile_picture}
+                          alt={user.username}
+                          className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="bg-gradient-to-r from-indigo-500 to-pink-500 w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-white font-semibold text-lg">
+                            {getInitials(user.username)}
+                          </span>
+                        </div>
+                      )}
 
-                    {/* User Info */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-medium text-sm truncate">
-                        {user.username}
-                      </h3>
-                      <p className="text-gray-400 text-xs truncate">
-                        {user.city || 'No city specified'}
-                      </p>
+                      {/* User Info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-white font-medium text-lg truncate">
+                          {user.username}
+                        </h3>
+                        <p className="text-slate-400 text-sm truncate flex items-center">
+                          <span className="mr-1">📍</span>
+                          {user.city || 'No city specified'}
+                        </p>
+                      </div>
+                      
+                      {/* Add Icon */}
+                      <div className="text-slate-400">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -294,18 +311,24 @@ function NewGroupModal({ onClose }) {
             )}
 
             {!loading && searchQuery.trim().length < 2 && (
-              <div className="text-center text-gray-400 py-8">
-                Start typing to search for users...
+              <div className="text-center text-slate-400 py-8">
+                <div className="w-16 h-16 mx-auto mb-4 frosted-glass btn-rounded flex items-center justify-center">
+                  <svg className="w-8 h-8 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">Add Members</h3>
+                <p className="text-sm">Type at least 2 characters to search for users...</p>
               </div>
             )}
           </div>
 
           {/* Create Button */}
-          <div className="p-6 border-t border-gray-700">
+          <div className="p-6 border-t border-slate-600">
             <button
               onClick={handleCreateGroup}
               disabled={!groupName.trim() || selectedMembers.length < 1 || creating}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className="w-full frosted-glass btn-rounded-lg text-white py-4 px-6 font-medium focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {creating ? (
                 <>

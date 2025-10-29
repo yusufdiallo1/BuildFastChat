@@ -23,9 +23,14 @@
     "vite": "^7.1.12"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^5.3.0",
+    "@stripe/stripe-js": "^8.2.0",
     "@supabase/supabase-js": "^2.76.1",
+    "otpauth": "^9.4.1",
+    "qrcode": "^1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
-    "react-router-dom": "^7.9.4"
+    "react-router-dom": "^7.9.4",
+    "stripe": "^19.1.0"
   }
 }

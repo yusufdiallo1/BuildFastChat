@@ -3,6 +3,10 @@ import ChatLayout from './components/ChatLayout'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
+import BlockedUsers from './pages/BlockedUsers'
+import ScheduledMessages from './pages/ScheduledMessages'
+import Settings from './pages/Settings'
+import MessageTemplates from './pages/MessageTemplates'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import './App.css'
 
@@ -37,6 +41,38 @@ function App() {
             element={
               <ProtectedRoute>
                 <ChatLayout />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/blocked-users" 
+            element={
+              <ProtectedRoute>
+                <BlockedUsers />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/scheduled-messages" 
+            element={
+              <ProtectedRoute>
+                <ScheduledMessages />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/templates" 
+            element={
+              <ProtectedRoute>
+                <MessageTemplates />
               </ProtectedRoute>
             } 
           />

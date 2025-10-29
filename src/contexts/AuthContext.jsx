@@ -4,6 +4,34 @@ import { usePresence } from '../hooks/usePresence'
 
 const AuthContext = createContext(null)
 
+// Helper function to apply theme
+const applyThemeFromProfile = (themeMode) => {
+  const root = document.documentElement
+  if (themeMode === 'light') {
+    root.style.setProperty('--background', '#ffffff')
+    root.style.setProperty('--surface', '#f8f9fa')
+    root.style.setProperty('--surface-light', '#e9ecef')
+    root.style.setProperty('--text-primary', '#1a1a1a')
+    root.style.setProperty('--text-secondary', '#495057')
+    root.style.setProperty('--text-muted', '#6c757d')
+    root.style.setProperty('--border', '#dee2e6')
+    document.body.classList.remove('dark-mode')
+    document.body.classList.add('light-mode')
+    localStorage.setItem('theme_preference', 'light')
+  } else {
+    root.style.setProperty('--background', '#0f172a')
+    root.style.setProperty('--surface', '#1e293b')
+    root.style.setProperty('--surface-light', '#334155')
+    root.style.setProperty('--text-primary', '#f8fafc')
+    root.style.setProperty('--text-secondary', '#cbd5e1')
+    root.style.setProperty('--text-muted', '#94a3b8')
+    root.style.setProperty('--border', '#334155')
+    document.body.classList.remove('light-mode')
+    document.body.classList.add('dark-mode')
+    localStorage.setItem('theme_preference', 'dark')
+  }
+}
+
 // Inner component to use hooks
 const AuthProviderInner = ({ children }) => {
   const [user, setUser] = useState(null)
@@ -15,6 +43,12 @@ const AuthProviderInner = ({ children }) => {
 
   useEffect(() => {
     let mounted = true
+
+    // Apply theme from localStorage immediately if available
+    const savedTheme = localStorage.getItem('theme_preference')
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      applyThemeFromProfile(savedTheme)
+    }
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -65,18 +99,27 @@ const AuthProviderInner = ({ children }) => {
               email: user.email,
               username: user.email?.split('@')[0] || 'user',
               city: 'Unknown',
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              theme_preference: 'dark'
             })
             .select()
             .single()
 
           if (!createError && newProfile) {
             setUserProfile(newProfile)
+            // Apply theme from profile
+            if (newProfile.theme_preference) {
+              applyThemeFromProfile(newProfile.theme_preference)
+            }
           } else {
             console.error('Error creating user profile:', createError)
           }
         } else if (!error && data) {
           setUserProfile(data)
+          // Apply theme from profile
+          if (data.theme_preference) {
+            applyThemeFromProfile(data.theme_preference)
+          }
         } else {
           console.error('Error fetching user profile:', error)
         }
@@ -86,6 +129,30 @@ const AuthProviderInner = ({ children }) => {
     }
 
     fetchOrCreateProfile()
+
+    // Listen for profile updates
+    const channel = supabase
+      .channel(`profile-updates-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          setUserProfile(payload.new)
+          if (payload.new.theme_preference) {
+            applyThemeFromProfile(payload.new.theme_preference)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
   }, [user])
 
   const value = {

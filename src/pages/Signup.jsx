@@ -475,17 +475,17 @@ function Signup() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111827] flex flex-col">
+    <div className="min-h-screen flex flex-col transition-colors duration-300" style={{ backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}>
       {/* Header */}
-      <header className="bg-[#1f2937] border-b border-gray-700">
+      <header className="frosted-glass border-b transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
+          <div className="flex justify-between items-center py-6">
             <div className="flex-shrink-0">
-              <Link to="/" className="text-2xl font-bold text-white">BuildFast Chat</Link>
+              <Link to="/" className="text-3xl font-bold gradient-text">BuildFast Chat</Link>
             </div>
-            <nav className="flex space-x-4">
-              <Link to="/" className="text-gray-300 hover:text-white transition-colors">Home</Link>
-              <Link to="/login" className="text-blue-500 hover:text-blue-400 transition-colors">Log In</Link>
+            <nav className="flex space-x-6">
+              <Link to="/" className="px-3 py-2 rounded-lg transition-colors" style={{ color: 'var(--text-secondary)' }} onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'} onMouseLeave={(e) => e.target.style.color = 'var(--text-secondary)'}>Home</Link>
+              <Link to="/login" className="frosted-glass btn-rounded px-6 py-2 font-medium hover-lift transition-all duration-200" style={{ color: 'var(--text-primary)' }}>Log In</Link>
             </nav>
           </div>
         </div>
@@ -493,21 +493,31 @@ function Signup() {
 
       {/* Signup Form */}
       <div className="flex-1 flex items-center justify-center p-4">
-      <div className="bg-[#1f2937] rounded-lg shadow-xl p-8 w-full max-w-md border border-gray-700">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-gray-400">Sign up to get started</p>
+      <div className="frosted-glass rounded-2xl shadow-2xl p-10 w-full max-w-md border transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 mx-auto mb-6 frosted-glass btn-rounded flex items-center justify-center">
+            <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </div>
+          <h1 className="text-4xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>Create Account</h1>
+          <p className="text-lg" style={{ color: 'var(--text-muted)' }}>Sign up to get started</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="bg-red-900/50 border border-red-700 text-red-200 px-4 py-3 rounded-lg text-sm">
-              {error}
+            <div className="frosted-glass rounded-xl p-4 border border-red-500/30 text-red-200 text-sm">
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="email" className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
               Email Address
             </label>
             <input
@@ -517,13 +527,14 @@ function Signup() {
               onChange={(e) => setEmail(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400 disabled:opacity-50"
+              className="w-full px-5 py-4 frosted-glass btn-rounded focus-ring disabled:opacity-50 transition-colors duration-300"
+              style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface)' }}
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-3">
               Password
             </label>
             <input
@@ -533,13 +544,13 @@ function Signup() {
               onChange={(e) => setPassword(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400 disabled:opacity-50"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring disabled:opacity-50"
               placeholder="••••••••"
             />
           </div>
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="username" className="block text-sm font-medium text-slate-300 mb-3">
               Username
             </label>
             <input
@@ -549,14 +560,14 @@ function Signup() {
               onChange={(e) => setUsername(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400 disabled:opacity-50"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring disabled:opacity-50"
               placeholder="johndoe"
             />
-            <p className="mt-1 text-xs text-gray-400">Must be unique</p>
+            <p className="mt-2 text-xs text-slate-400">Must be unique</p>
           </div>
 
           <div>
-            <label htmlFor="city" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="city" className="block text-sm font-medium text-slate-300 mb-3">
               City
             </label>
             <select
@@ -565,11 +576,11 @@ function Signup() {
               onChange={(e) => setCity(e.target.value)}
               required
               disabled={loading}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 appearance-none"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white focus-ring disabled:opacity-50 appearance-none"
             >
               <option value="">Select a city</option>
               {cities.map((cityName) => (
-                <option key={cityName} value={cityName}>
+                <option key={cityName} value={cityName} className="bg-slate-800">
                   {cityName}
                 </option>
               ))}
@@ -577,19 +588,19 @@ function Signup() {
           </div>
 
           <div>
-            <label htmlFor="profile-picture" className="block text-sm font-medium text-gray-300 mb-2">
+            <label htmlFor="profile-picture" className="block text-sm font-medium text-slate-300 mb-3">
               Profile Picture (Optional)
             </label>
             {previewUrl && (
-              <div className="mb-3 flex items-center">
-                <img src={previewUrl} alt="Preview" className="w-16 h-16 rounded-full object-cover border-2 border-blue-500" />
+              <div className="mb-4 flex items-center">
+                <img src={previewUrl} alt="Preview" className="w-20 h-20 rounded-full object-cover border-2 border-indigo-500" />
                 <button
                   type="button"
                   onClick={() => {
                     setProfilePicture(null)
                     setPreviewUrl(null)
                   }}
-                  className="ml-3 text-red-400 hover:text-red-300 text-sm"
+                  className="ml-4 frosted-glass btn-rounded text-red-300 px-4 py-2 text-sm font-medium hover-lift transition-all duration-200 hover:text-red-200"
                 >
                   Remove
                 </button>
@@ -601,15 +612,15 @@ function Signup() {
               accept="image/*"
               onChange={handlePictureChange}
               disabled={loading}
-              className="w-full px-4 py-3 bg-gray-700 text-white border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition placeholder-gray-400 disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700"
+              className="w-full px-5 py-4 frosted-glass btn-rounded text-white focus-ring disabled:opacity-50 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700"
             />
-            <p className="mt-1 text-xs text-gray-400">Max 5MB, JPG, PNG, GIF, or WEBP</p>
+            <p className="mt-2 text-xs text-slate-400">Max 5MB, JPG, PNG, GIF, or WEBP</p>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full frosted-glass btn-rounded-lg text-white py-4 text-lg font-semibold focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover-lift transition-all duration-200"
           >
             {loading ? (
               <>
@@ -625,10 +636,10 @@ function Signup() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-400">
+        <div className="mt-8 text-center">
+          <p className="text-slate-400 text-lg">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-500 hover:text-blue-400 font-semibold">
+            <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold hover-lift transition-all duration-200">
               Log in
             </Link>
           </p>
