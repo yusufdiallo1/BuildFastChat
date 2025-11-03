@@ -243,7 +243,7 @@ function TwoFactorSetupWizard({ isOpen, onClose, onComplete }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center backdrop-blur-sm bg-black/50" onClick={onClose} style={{ zIndex: 9999 }}>
       <div 
         className="frosted-glass rounded-xl shadow-2xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
         style={{ backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}
