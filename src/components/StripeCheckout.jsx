@@ -73,7 +73,7 @@ function StripeCheckout({ planType = 'pro' }) {
         }}
         className={planType === 'pro' ? 'gradient-button' : 'outline-button'}
       >
-        {loading ? 'Processing...' : planType === 'pro' ? 'Start Pro Trial' : 'Contact Sales'}
+        {loading ? 'Processing...' : planType === 'pro' ? 'Start Pro Trial' : 'Start Enterprise Trial'}
       </button>
       
       {error && (
