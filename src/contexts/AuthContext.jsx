@@ -51,13 +51,27 @@ const AuthProviderInner = ({ children }) => {
       applyThemeFromProfile(savedTheme)
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setUser(session?.user ?? null)
-        setLoading(false)
-      }
-    })
+    // Get initial session - wrap in try/catch to prevent errors
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (error) {
+          console.error('Error getting session:', error)
+          if (mounted) {
+            setLoading(false)
+          }
+          return
+        }
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to get session:', err)
+        if (mounted) {
+          setLoading(false)
+        }
+      })
 
     // Listen for auth changes
     const {
@@ -75,18 +89,18 @@ const AuthProviderInner = ({ children }) => {
     }
   }, [])
 
-  // Initialize socket when user is logged in
-  useEffect(() => {
-    if (user?.id) {
-      initSocket(user.id)
-    } else {
-      disconnectSocket()
-    }
-    
-    return () => {
-      disconnectSocket()
-    }
-  }, [user?.id])
+  // Initialize socket when user is logged in - DISABLED until backend server is set up
+  // useEffect(() => {
+  //   if (user?.id) {
+  //     initSocket(user.id)
+  //   } else {
+  //     disconnectSocket()
+  //   }
+  //   
+  //   return () => {
+  //     disconnectSocket()
+  //   }
+  // }, [user?.id])
 
   useEffect(() => {
     if (!user) {

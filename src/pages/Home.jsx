@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect, useState } from 'react'
 import { stripePromise } from '../lib/stripe'
+import { supabase } from '../lib/supabase'
 
 function Home() {
   const { user } = useAuth()
@@ -20,46 +21,138 @@ function Home() {
 
     setCheckoutLoading(true)
     try {
-      const stripe = await stripePromise
-      
-      // You'll need to create a backend endpoint to create checkout sessions
-      // For now, this is a placeholder that shows the integration is ready
-      
-      alert(`Stripe is now configured! 
+      // Get Supabase session token for authentication
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
 
-Next steps:
-1. Create products in your Stripe Dashboard (Pro and Enterprise)
-2. Set up a backend server with an endpoint to create checkout sessions
-3. The backend should call Stripe API to create payment sessions
-4. See STRIPE_SETUP_GUIDE.md for detailed instructions
+      if (!token) {
+        throw new Error('Please log in to continue')
+      }
 
-Your API key is configured and ready to use.`)
+      // Get backend URL from environment or use default
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
       
-      // Once you have a backend, uncomment this:
-      /*
-      const response = await fetch('http://localhost:3000/api/create-checkout-session', {
+      // Get Stripe Price ID from environment or use placeholder
+      const proPriceId = import.meta.env.VITE_STRIPE_PRO_PRICE_ID
+
+      // Validate Price ID before making request
+      if (!proPriceId || proPriceId === 'price_YOUR_PRO_PRICE_ID_HERE' || proPriceId.trim() === '') {
+        const errorMsg = `Missing Stripe Price ID!
+
+To fix this:
+
+1. Go to: https://dashboard.stripe.com/test/products
+2. Click your "Pro" product (or create one)
+3. Find the Price ID (starts with "price_")
+4. Create/edit .env file in project root:
+   VITE_STRIPE_PRO_PRICE_ID=price_xxxxxxxxxxxxx
+
+5. Restart your frontend dev server (npm run dev)
+
+See SETUP_STRIPE_PRICE.md for detailed instructions.`
+        alert(errorMsg)
+        throw new Error('Missing VITE_STRIPE_PRO_PRICE_ID in .env file')
+      }
+
+      if (!proPriceId.startsWith('price_')) {
+        alert(`Invalid Price ID format!
+
+Your Price ID should start with "price_"
+Current value: ${proPriceId}
+
+Go to Stripe Dashboard > Products > Your Product > Pricing
+Copy the Price ID and update .env file:
+VITE_STRIPE_PRO_PRICE_ID=price_xxxxxxxxxxxxx`)
+        throw new Error('Invalid Price ID format')
+      }
+
+      const response = await fetch(`${backendUrl}/api/stripe/create-checkout-session`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           userId: user.id,
-          priceId: 'price_YOUR_PRICE_ID_HERE',
+          priceId: proPriceId,
           planType: 'pro',
+          customerEmail: user.email
         }),
       })
-      
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        
+        if (errorData.error?.includes('No such price')) {
+          alert(`Price ID not found in Stripe!
+
+Your Price ID: ${proPriceId}
+
+This means:
+1. The Price ID doesn't exist in your Stripe account
+2. OR you're using a production key with test Price ID (or vice versa)
+
+Fix:
+1. Check Stripe Dashboard: https://dashboard.stripe.com/test/products
+2. Make sure you're using TEST mode Price ID with TEST mode Secret Key
+3. Copy the correct Price ID
+4. Update .env: VITE_STRIPE_PRO_PRICE_ID=price_xxxxxxxxxxxxx
+5. Restart frontend dev server`)
+          throw new Error(`Price ID not found: ${proPriceId}`)
+        }
+        
+        if (errorData.error?.includes('Stripe is not configured')) {
+          throw new Error('Stripe is not configured on backend. Add STRIPE_SECRET_KEY to server/.env')
+        }
+        
+        throw new Error(errorData.error || `Server error: ${response.status}`)
+      }
+
       const data = await response.json()
-      
+
       if (data.error) {
         throw new Error(data.error)
       }
-      
+
+      if (!data.url) {
+        throw new Error('No checkout URL returned from server')
+      }
+
       // Redirect to Stripe Checkout
       window.location.href = data.url
-      */
       
     } catch (error) {
       console.error('Error:', error)
-      alert('Failed to start checkout. Please try again.')
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        const message = `Cannot connect to backend server.
+
+To fix this:
+
+1. Open a NEW terminal window
+2. Run: cd server && npm run dev
+   (OR from project root: npm run server)
+
+3. Wait for: "🚀 Server running on http://localhost:3000"
+
+4. Make sure you have:
+   ✅ server/.env file created
+   ✅ STRIPE_SECRET_KEY in server/.env
+   
+5. Then try again
+
+See START_BACKEND.md for detailed instructions.`
+        alert(message)
+      } else if (error.message.includes('Stripe is not configured')) {
+        alert(`Stripe is not configured on backend.
+
+Please:
+1. Go to server directory
+2. Add STRIPE_SECRET_KEY to server/.env
+3. Get key from: https://dashboard.stripe.com/test/apikeys
+4. Restart server`)
+      } else {
+        alert(`Failed to start checkout: ${error.message}\n\nSee START_BACKEND.md for help.`)
+      }
     } finally {
       setCheckoutLoading(false)
     }
@@ -212,53 +305,6 @@ Your API key is configured and ready to use.`)
             >
               Home
             </Link>
-            <Link 
-              to="/chat" 
-              className={`nav-pill-button ${location.pathname === '/chat' ? 'active' : ''}`}
-              style={{
-                padding: '10px 24px',
-                borderRadius: '25px',
-                fontSize: '15px',
-                fontWeight: 500,
-                color: location.pathname === '/chat' ? '#ffffff' : 'rgba(255, 255, 255, 0.8)',
-                background: location.pathname === '/chat' 
-                  ? 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)'
-                  : 'transparent',
-                boxShadow: location.pathname === '/chat' 
-                  ? '0 4px 12px rgba(139, 92, 246, 0.4)'
-                  : 'none',
-                textDecoration: 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                cursor: 'pointer',
-                border: 'none',
-                outline: 'none'
-              }}
-              onMouseEnter={(e) => {
-                if (location.pathname !== '/chat') {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.target.style.color = 'rgba(255, 255, 255, 1)'
-                  e.target.style.transform = 'scale(1.05)'
-                  e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.1)'
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (location.pathname !== '/chat') {
-                  e.target.style.background = 'transparent'
-                  e.target.style.color = 'rgba(255, 255, 255, 0.8)'
-                  e.target.style.transform = 'scale(1)'
-                  e.target.style.boxShadow = 'none'
-                }
-              }}
-              onFocus={(e) => {
-                e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'
-                e.target.style.outlineOffset = '2px'
-              }}
-              onBlur={(e) => {
-                e.target.style.outline = 'none'
-              }}
-            >
-              Chat
-            </Link>
             <button
               className="nav-pill-button testimonials-btn"
               onClick={(e) => {
@@ -347,85 +393,53 @@ Your API key is configured and ready to use.`)
             >
               Pricing
             </button>
-              {user ? (
-                <Link 
-                  to="/chat" 
-                className="nav-pill-button"
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '25px',
-                  fontSize: '15px',
-                  fontWeight: 500,
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  background: 'transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none'
-                }}
-                onMouseEnter={(e) => {
+            <Link 
+              to="/chat" 
+              className={`nav-pill-button ${location.pathname === '/chat' ? 'active' : ''}`}
+              style={{
+                padding: '10px 24px',
+                borderRadius: '25px',
+                fontSize: '15px',
+                fontWeight: 500,
+                color: location.pathname === '/chat' ? '#ffffff' : 'rgba(255, 255, 255, 0.8)',
+                background: location.pathname === '/chat' 
+                  ? 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)'
+                  : 'transparent',
+                boxShadow: location.pathname === '/chat' 
+                  ? '0 4px 12px rgba(139, 92, 246, 0.4)'
+                  : 'none',
+                textDecoration: 'none',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                cursor: 'pointer',
+                border: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (location.pathname !== '/chat') {
                   e.target.style.background = 'rgba(255, 255, 255, 0.1)'
                   e.target.style.color = 'rgba(255, 255, 255, 1)'
                   e.target.style.transform = 'scale(1.05)'
                   e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.1)'
-                }}
-                onMouseLeave={(e) => {
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (location.pathname !== '/chat') {
                   e.target.style.background = 'transparent'
                   e.target.style.color = 'rgba(255, 255, 255, 0.8)'
                   e.target.style.transform = 'scale(1)'
                   e.target.style.boxShadow = 'none'
-                }}
-                onFocus={(e) => {
-                  e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'
-                  e.target.style.outlineOffset = '2px'
-                }}
-                onBlur={(e) => {
-                  e.target.style.outline = 'none'
-                }}
-                >
-                  Go to Chat
-                </Link>
-              ) : (
-              <Link 
-                to="/login" 
-                className="nav-pill-button"
-                style={{
-                  padding: '10px 24px',
-                  borderRadius: '25px',
-                  fontSize: '15px',
-                  fontWeight: 500,
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  background: 'transparent',
-                  textDecoration: 'none',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  cursor: 'pointer',
-                  border: 'none',
-                  outline: 'none'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.target.style.color = 'rgba(255, 255, 255, 1)'
-                  e.target.style.transform = 'scale(1.05)'
-                  e.target.style.boxShadow = '0 4px 12px rgba(255, 255, 255, 0.1)'
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent'
-                  e.target.style.color = 'rgba(255, 255, 255, 0.8)'
-                  e.target.style.transform = 'scale(1)'
-                  e.target.style.boxShadow = 'none'
-                }}
-                onFocus={(e) => {
-                  e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'
-                  e.target.style.outlineOffset = '2px'
-                }}
-                onBlur={(e) => {
-                  e.target.style.outline = 'none'
-                }}
-              >
-                Log In
-              </Link>
-              )}
+                }
+              }}
+              onFocus={(e) => {
+                e.target.style.outline = '2px solid rgba(139, 92, 246, 0.5)'
+                e.target.style.outlineOffset = '2px'
+              }}
+              onBlur={(e) => {
+                e.target.style.outline = 'none'
+              }}
+            >
+              Chat
+            </Link>
             </nav>
         </div>
       </header>
@@ -480,7 +494,7 @@ Your API key is configured and ready to use.`)
             {user ? (
                 <Link 
                   to="/chat" 
-                    className="group frosted-glass btn-rounded-lg px-8 md:px-10 py-4 text-lg font-medium hover-lift transition-all duration-200 flex items-center justify-center space-x-2 ripple"
+                    className="group frosted-glass btn-rounded-lg btn-glow px-8 md:px-10 py-4 text-lg font-medium hover-lift transition-all duration-200 flex items-center justify-center space-x-2 ripple"
                     style={{ color: 'var(--text-primary)', backgroundColor: 'var(--primary)' }}
                 >
                     <span>Go to Chat</span>
@@ -492,7 +506,7 @@ Your API key is configured and ready to use.`)
                   <>
                 <Link 
                   to="/login" 
-                      className="group frosted-glass btn-rounded-lg px-8 md:px-10 py-4 text-lg font-semibold hover-lift transition-all duration-200 flex items-center justify-center space-x-2 ripple"
+                      className="group frosted-glass btn-rounded-lg btn-glow px-8 md:px-10 py-4 text-lg font-semibold hover-lift transition-all duration-200 flex items-center justify-center space-x-2 ripple"
                       style={{ color: 'white', backgroundColor: 'var(--primary)' }}
                 >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1280,7 +1294,7 @@ Your API key is configured and ready to use.`)
               
               {/* Button */}
               <button 
-                className="mt-auto"
+                className="mt-auto btn-glow"
                 onClick={handleProCheckout}
                 disabled={checkoutLoading}
                 style={{
@@ -1295,19 +1309,16 @@ Your API key is configured and ready to use.`)
                   color: 'white',
                   border: 'none',
                   outline: 'none',
-                  boxShadow: '0 4px 12px rgba(139, 92, 246, 0.4)',
                   opacity: checkoutLoading ? 0.7 : 1
                 }}
                 onMouseEnter={(e) => {
                   if (!checkoutLoading) {
                     e.target.style.transform = 'scale(1.05)'
-                    e.target.style.boxShadow = '0 8px 20px rgba(139, 92, 246, 0.5)'
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (!checkoutLoading) {
                     e.target.style.transform = 'scale(1)'
-                    e.target.style.boxShadow = '0 4px 12px rgba(139, 92, 246, 0.4)'
                   }
                 }}
               >

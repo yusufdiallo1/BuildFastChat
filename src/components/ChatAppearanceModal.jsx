@@ -219,7 +219,7 @@ function ChatAppearanceModal({ conversationId, isGroupChat, onClose }) {
 
   const applySettingsToChat = () => {
     // Apply settings to the message list container via CSS variables
-    const messageList = document.querySelector('.flex-1.overflow-y-auto')
+    const messageList = document.querySelector('.message-list-container')
     if (!messageList) return
 
     const root = messageList.style

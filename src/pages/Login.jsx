@@ -8,8 +8,10 @@ import { is2FAEnabled, isDeviceTrusted, getDeviceFingerprint } from '../utils/tw
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [resetNotice, setResetNotice] = useState('')
   const [needs2FA, setNeeds2FA] = useState(false)
   const [userId, setUserId] = useState(null)
   const [userSecret, setUserSecret] = useState(null)
@@ -33,9 +35,18 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setResetNotice('')
     setLoading(true)
 
     try {
+      // Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl) {
+        setError('❌ Configuration Error: Supabase credentials are missing! Please create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY. Check SETUP_ENV.md for instructions.')
+        setLoading(false)
+        return
+      }
+
       const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -43,10 +54,12 @@ function Login() {
 
       if (supabaseError) {
         // Handle specific error cases
-        if (supabaseError.message.includes('Invalid login credentials')) {
+        if (supabaseError.message.includes('Invalid login credentials') || supabaseError.message.includes('Invalid')) {
           setError('Invalid email or password. Please try again.')
+        } else if (supabaseError.message.includes('Failed to fetch')) {
+          setError('❌ Connection Error: Cannot connect to Supabase. Your project may be PAUSED. Go to https://supabase.com/dashboard and restore your project. See TEST_SUPABASE_CONNECTION.md for details.')
         } else {
-          setError('Invalid email or password. Please try again.')
+          setError(supabaseError.message || 'An error occurred. Please try again.')
         }
         setLoading(false)
         return
@@ -89,6 +102,27 @@ function Login() {
       setLoading(false)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleForgotPassword = async () => {
+    setError('')
+    setResetNotice('')
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Please enter your email address to reset your password.')
+      return
+    }
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`
+      })
+      if (resetError) {
+        setError(resetError.message || 'Failed to send reset email. Please try again.')
+        return
+      }
+      setResetNotice('If this email exists, a password reset link has been sent.')
+    } catch (e) {
+      setError('Failed to send reset email. Please try again.')
     }
   }
 
@@ -162,6 +196,16 @@ function Login() {
               </div>
             </div>
           )}
+          {resetNotice && (
+            <div className="frosted-glass rounded-xl p-4 border text-emerald-200 text-sm" style={{ borderColor: 'rgba(16, 185, 129, 0.3)' }}>
+              <div className="flex items-center">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {resetNotice}
+              </div>
+            </div>
+          )}
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
@@ -184,23 +228,47 @@ function Login() {
             <label htmlFor="password" className="block text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              className="w-full px-5 py-4 frosted-glass btn-rounded focus-ring disabled:opacity-50 transition-colors duration-300"
-              style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface)' }}
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-5 py-4 frosted-glass btn-rounded focus-ring disabled:opacity-50 transition-colors duration-300 pr-12"
+                style={{ color: 'var(--text-primary)', backgroundColor: 'var(--surface)' }}
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-200"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9.88 9.88A3 3 0 0112 9c1.657 0 3 1.343 3 3 0 .74-.267 1.417-.712 1.94M6.343 6.343C4.78 7.53 3.5 9.11 2.458 11.003a1.043 1.043 0 000 .994C4.55 16.117 8.013 18 12 18c1.57 0 3.06-.287 4.414-.81M15 15a3 3 0 01-3 3" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12.003C3.732 8.943 7.523 6 12 6c4.477 0 8.268 2.943 9.542 6.003a1.043 1.043 0 010 .994C20.268 16.057 16.477 19 12 19c-4.477 0-8.268-2.943-9.542-6.003a1.043 1.043 0 010-.994z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <div className="mt-2 text-right">
+              <button type="button" onClick={handleForgotPassword} className="text-indigo-400 hover:text-indigo-300 text-sm">
+                Forgot password?
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full frosted-glass btn-rounded-lg py-4 text-lg font-semibold focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover-lift transition-all duration-200"
+            className="w-full frosted-glass btn-rounded-lg btn-glow py-4 text-lg font-semibold focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover-lift transition-all duration-200"
             style={{ color: 'var(--text-primary)' }}
           >
             {loading ? (

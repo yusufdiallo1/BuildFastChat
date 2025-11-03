@@ -138,7 +138,7 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
   }, [conversationId, user])
 
   const applyAppearanceSettings = (settings) => {
-    const messageList = document.querySelector('.flex-1.overflow-y-auto')
+    const messageList = document.querySelector('.message-list-container')
     if (!messageList) return
 
     const root = messageList.style
@@ -186,7 +186,7 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
   }
 
   const applyAppearanceFromObject = (settings) => {
-    const messageList = document.querySelector('.flex-1.overflow-y-auto')
+    const messageList = document.querySelector('.message-list-container')
     if (!messageList) return
 
     const root = messageList.style
@@ -221,7 +221,7 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
   }
 
   const applyDefaultAppearance = () => {
-    const messageList = document.querySelector('.flex-1.overflow-y-auto')
+    const messageList = document.querySelector('.message-list-container')
     if (!messageList) return
 
     const root = messageList.style
@@ -500,7 +500,7 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
         }
         
         if (!container) {
-          container = document.querySelector('.flex-1.overflow-y-auto')
+          container = document.querySelector('.message-list-container')
         }
         
         if (container) {
@@ -1497,7 +1497,7 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col">
+    <div className="message-list-container flex-1 overflow-y-auto px-6 py-6 flex flex-col">
       <div className="flex-1 max-w-4xl mx-auto w-full">
         {/* Pinned Messages Banner */}
         {pinnedMessages.length > 0 && (

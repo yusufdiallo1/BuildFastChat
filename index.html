@@ -8,6 +8,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill for Node.js globals in browser (needed for simple-peer)
+      if (typeof global === 'undefined') {
+        window.global = globalThis;
+      }
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

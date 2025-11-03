@@ -83,9 +83,37 @@ export const useVoiceCall = (currentUserId, currentUserName) => {
   // Initiate a call
   const initiateCall = useCallback(async (targetUserId, targetUserName, targetUserProfilePicture) => {
     const socket = getSocket()
-    if (!socket || !socket.connected) {
-      setConnectionError('Connection to server lost. Please refresh the page.')
+    const socketUrl = import.meta.env.VITE_SOCKET_SERVER_URL || 'http://localhost:3001'
+    
+    if (!socket) {
+      const errorMsg = `Voice calling requires a Socket.io backend server.\n\nServer URL: ${socketUrl}\n\nPlease set up the backend server using VOICE_CALL_BACKEND_SETUP.md`
+      console.error(errorMsg)
+      const userConfirmed = confirm(`❌ Socket server not connected!\n\n${errorMsg}\n\nWould you like to open the setup guide?`)
+      if (userConfirmed) {
+        // Show a helpful message about where to find the guide
+        alert('See VOICE_CALL_BACKEND_SETUP.md in your project for complete setup instructions.')
+      }
+      setConnectionError(errorMsg)
       return
+    }
+    
+    if (!socket.connected) {
+      // Try to reconnect
+      socket.connect()
+      
+      // Wait a moment for connection attempt
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      if (!socket.connected) {
+        const errorMsg = `Not connected to socket server at ${socketUrl}\n\nPlease:\n1. Ensure the Socket.io server is running\n2. Check VOICE_CALL_BACKEND_SETUP.md for setup instructions`
+        console.error('Socket not connected')
+        const userConfirmed = confirm(`❌ ${errorMsg}\n\nWould you like to see the setup guide?`)
+        if (userConfirmed) {
+          alert('See VOICE_CALL_BACKEND_SETUP.md in your project for setup instructions.')
+        }
+        setConnectionError(errorMsg)
+        return
+      }
     }
 
     try {
@@ -150,8 +178,18 @@ export const useVoiceCall = (currentUserId, currentUserName) => {
 
     } catch (error) {
       console.error('Error initiating call:', error)
-      setConnectionError(error.message || 'Failed to start call')
+      const errorMessage = error.message || 'Failed to start call'
+      setConnectionError(errorMessage)
+      
+      // Show user-friendly error
+      if (errorMessage.includes('Microphone')) {
+        alert(`❌ ${errorMessage}\n\nPlease enable microphone access in your browser settings.`)
+      } else {
+        alert(`❌ Failed to start call: ${errorMessage}\n\nCheck console for details.`)
+      }
+      
       cleanup()
+      throw error // Re-throw so button handler can catch it
     }
   }, [currentUserId, currentUserName, getAudioStream, cleanup])
 

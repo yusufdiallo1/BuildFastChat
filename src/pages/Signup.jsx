@@ -6,14 +6,44 @@ import { useAuth } from '../contexts/AuthContext'
 function Signup() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [username, setUsername] = useState('')
   const [city, setCity] = useState('')
   const [profilePicture, setProfilePicture] = useState(null)
   const [previewUrl, setPreviewUrl] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [preflightStatus, setPreflightStatus] = useState(null)
+  
+  // WRAP useState to intercept ALL error sets - ABSOLUTE FINAL PROTECTION
+  const [errorState, setErrorState] = useState('')
   const navigate = useNavigate()
   const { user } = useAuth()
+
+  // SAFE setError wrapper - intercepts EVERY error and transforms "Failed to fetch"
+  const safeSetError = (errorMsg) => {
+    if (!errorMsg) {
+      setErrorState('')
+      return
+    }
+    
+    const errorStr = String(errorMsg).toLowerCase()
+    
+    // IMMEDIATELY transform ANY instance of "Failed to fetch" - NO EXCEPTIONS
+    if (errorStr.includes('failed to fetch') ||
+        errorStr.includes('err_name_not_resolved') ||
+        errorStr.includes('networkerror') ||
+        errorStr.includes('network request failed') ||
+        errorStr === 'failed to fetch') {
+      setErrorState('❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard')
+      return
+    }
+    
+    setErrorState(errorMsg)
+  }
+  
+  // Override error state - always use safe version
+  const error = errorState
+  const setError = safeSetError
 
   // List of major cities including ALL GCC cities, Muslim cities, and all US states, arranged alphabetically
   const cities = [
@@ -332,6 +362,72 @@ function Signup() {
       navigate('/chat', { replace: true })
     }
   }, [user, navigate])
+  
+  // Global error handler for unhandled promise rejections
+  useEffect(() => {
+    const handleUnhandledRejection = (event) => {
+      const err = event.reason
+      const errorStr = String(err?.message || err || '').toLowerCase()
+      
+      if (errorStr.includes('failed to fetch') ||
+          errorStr.includes('err_name_not_resolved') ||
+          errorStr.includes('networkerror')) {
+        event.preventDefault() // Prevent console error
+        safeSetError('❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard')
+        setLoading(false)
+      }
+    }
+    
+    window.addEventListener('unhandledrejection', handleUnhandledRejection)
+    return () => window.removeEventListener('unhandledrejection', handleUnhandledRejection)
+  }, [])
+  
+  // Optional debug: run a quick preflight on mount when ?debug=1 is present
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const debug = params.get('debug') === '1'
+      if (!debug) return
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+      if (!supabaseUrl || !supabaseAnonKey) {
+        setPreflightStatus('config-missing')
+        return
+      }
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 2000)
+      fetch(`${supabaseUrl}/rest/v1/`, { method: 'HEAD', headers: { apikey: supabaseAnonKey }, signal: controller.signal })
+        .then(r => {
+          clearTimeout(timeoutId)
+          setPreflightStatus(`ok:${r.status}`)
+        })
+        .catch(err => {
+          clearTimeout(timeoutId)
+          setPreflightStatus(`err:${String(err?.message || err)}`)
+        })
+    } catch {}
+  }, [])
+
+  // Block form submission if Supabase client is invalid
+  useEffect(() => {
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+    if (!supabaseUrl || !supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+      safeSetError('❌ Configuration Error: Invalid Supabase URL. Please check your .env file.')
+    }
+  }, [])
+  
+  // Extra protection - transform error if it somehow bypassed safeSetError
+  useEffect(() => {
+    if (errorState && errorState !== '' && typeof errorState === 'string') {
+      const errorStr = errorState.toLowerCase()
+      if (errorStr.includes('failed to fetch') || 
+          errorStr.includes('err_name_not_resolved') || 
+          errorStr.includes('networkerror')) {
+        // Transform immediately
+        setErrorState('❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard')
+      }
+    }
+  }, [errorState])
 
   // Handle profile picture selection
   const handlePictureChange = (e) => {
@@ -339,12 +435,12 @@ function Signup() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        setError('Please select an image file')
+        safeSetError('Please select an image file')
         return
       }
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setError('Image size must be less than 5MB')
+        safeSetError('Image size must be less than 5MB')
         return
       }
       setProfilePicture(file)
@@ -358,106 +454,221 @@ function Signup() {
     }
   }
 
+  // Helper function to transform ANY error to user-friendly message
+  const transformAnyError = (error) => {
+    if (!error) return null
+    
+    // Check multiple possible error formats
+    const errorStr = String(error).toLowerCase()
+    const errorMsg = (error?.message || String(error) || '').toLowerCase()
+    const errorString = String(error).toLowerCase()
+    
+    const checks = [
+      errorStr,
+      errorMsg,
+      errorString,
+      (error?.error?.message || '').toLowerCase(),
+      (error?.details || '').toLowerCase(),
+      (error?.hint || '').toLowerCase()
+    ]
+    
+    for (const check of checks) {
+      if (check.includes('failed to fetch') ||
+          check.includes('err_name_not_resolved') ||
+          check.includes('networkerror') ||
+          check.includes('network request failed') ||
+          check === 'failed to fetch' ||
+          check.trim() === 'failed to fetch') {
+        return '❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard'
+      }
+    }
+    
+    return null
+  }
+
+  // ABSOLUTE ERROR INTERCEPTOR - transforms ANY error containing "Failed to fetch"
+  const interceptError = (err) => {
+    if (!err) return '❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard'
+    
+    const errStr = String(err?.message || err || '').toLowerCase()
+    if (errStr.includes('failed to fetch') || errStr.includes('err_name_not_resolved') || errStr.includes('networkerror')) {
+      return '❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard'
+    }
+    return String(err?.message || err || 'An error occurred')
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setError('')
+    safeSetError('')
     setLoading(true)
 
+    // Validate Supabase environment and reachability before any DB calls
     try {
-      // Validate required fields
-      if (!username || username.trim() === '') {
-        setError('Username is required')
-        setLoading(false)
-        return
-      }
-      if (!city || city.trim() === '') {
-        setError('City is required')
-        setLoading(false)
-        return
-      }
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
 
-      // Check if username is already taken
-      const { data: existingUser } = await supabase
-        .from('user_profiles')
-        .select('username')
-        .eq('username', username.trim())
-        .single()
-
-      if (existingUser) {
-        setError('This username is already taken. Please choose another.')
+      if (!supabaseUrl || !supabaseAnonKey || !supabaseUrl.startsWith('https://') || !supabaseUrl.includes('.supabase.co')) {
+        safeSetError('❌ Configuration Error: Supabase credentials are missing or invalid. Please check your .env and deployment settings.')
         setLoading(false)
         return
       }
 
-      // Sign up the user
-      const { data, error: supabaseError } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (supabaseError) {
-        // Handle specific error cases
-        if (supabaseError.message.includes('already registered')) {
-          setError('This email is already registered. Please try logging in.')
-        } else if (supabaseError.message.includes('Password')) {
-          setError('Password must be at least 6 characters long.')
-        } else {
-          setError(supabaseError.message)
-        }
+      // Lightweight pre-flight connectivity test (3s timeout)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 3000)
+      try {
+        const resp = await fetch(`${supabaseUrl}/rest/v1/`, {
+          method: 'HEAD',
+          headers: { apikey: supabaseAnonKey },
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+        // Any response (even 401/404) means the host is reachable; only network errors/timeout should block
+      } catch (preflightErr) {
+        clearTimeout(timeoutId)
+        safeSetError('❌ Connection Error: Cannot connect to Supabase. Your project may be paused or the URL is incorrect. Restore the project in the dashboard and verify env variables.')
         setLoading(false)
         return
       }
+    } catch (envErr) {
+      safeSetError(interceptError(envErr))
+      setLoading(false)
+      return
+    }
 
-      if (data.user) {
-        let profilePictureUrl = ''
+    // Validate inputs first
+    if (!username?.trim()) {
+      safeSetError('Username is required')
+      setLoading(false)
+      return
+    }
+    if (!city?.trim()) {
+      safeSetError('City is required')
+      setLoading(false)
+      return
+    }
 
-        // Upload profile picture if one was selected
-        if (profilePicture) {
-          const fileExt = profilePicture.name.split('.').pop()
-          const fileName = `${data.user.id}-${Math.random()}.${fileExt}`
-          const filePath = `${data.user.id}/${fileName}`
-
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, profilePicture)
-
-          if (uploadError) {
-            console.error('Error uploading profile picture:', uploadError)
-            setError('Account created but failed to upload profile picture.')
-          } else {
-            // Get public URL
-            const { data: urlData } = supabase.storage
-              .from('avatars')
-              .getPublicUrl(filePath)
-            profilePictureUrl = urlData.publicUrl
-          }
-        }
-
-        // Insert user profile into user_profiles table
-        const { error: profileError } = await supabase
+    try {
+      // Check username availability
+      try {
+        const usernameCheck = await supabase
           .from('user_profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            username: username.trim(),
-            city: city.trim(),
-            full_name: '',
-            profile_picture: profilePictureUrl,
-            is_online: true
-          })
+          .select('username')
+          .eq('username', username.trim())
+          .single()
 
-        if (profileError) {
-          console.error('Error creating user profile:', profileError)
-          setError('Account created but profile failed to initialize. Please contact support.')
+        if (usernameCheck.error && usernameCheck.error.code !== 'PGRST116') {
+          safeSetError(interceptError(usernameCheck.error))
           setLoading(false)
           return
         }
 
-        // Success! Navigate to chat page
-        navigate('/chat')
+        if (usernameCheck.data) {
+          safeSetError('This username is already taken. Please choose another.')
+          setLoading(false)
+          return
+        }
+      } catch (checkErr) {
+        safeSetError(interceptError(checkErr))
+        setLoading(false)
+        return
+      }
+
+      // Sign up user
+      try {
+        const signupResult = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+            // Ensure the confirmation link returns to this app's origin (must be allowlisted in Supabase Auth settings)
+            emailRedirectTo: `${window.location.origin}/login`
+          }
+        })
+
+        if (signupResult.error) {
+          const errorMsg = String(signupResult.error.message || '').toLowerCase()
+          if (errorMsg.includes('already registered')) {
+            safeSetError('This email is already registered. Please try logging in.')
+          } else if (errorMsg.includes('password')) {
+            safeSetError('Password must be at least 6 characters long.')
+          } else {
+            safeSetError(interceptError(signupResult.error))
+          }
+          setLoading(false)
+          return
+        }
+
+        if (!signupResult.data?.user) {
+          safeSetError('Failed to create account. Please try again.')
+          setLoading(false)
+          return
+        }
+
+        // If email confirmation is enabled, session will be null. Avoid profile creation until after confirmation/login.
+        if (!signupResult.data?.session) {
+          safeSetError('We\'ve sent a verification email. Please confirm your email, then log in to complete setup.')
+          setLoading(false)
+          return
+        }
+
+        const userId = signupResult.data.user.id
+        let profilePictureUrl = ''
+
+        // Upload profile picture if provided
+        if (profilePicture) {
+          try {
+            const fileExt = profilePicture.name.split('.').pop()
+            const fileName = `${userId}-${Date.now()}.${fileExt}`
+            const filePath = `${userId}/${fileName}`
+
+            const uploadResult = await supabase.storage
+              .from('avatars')
+              .upload(filePath, profilePicture)
+
+            if (!uploadResult.error) {
+              const urlResult = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath)
+              profilePictureUrl = urlResult.data.publicUrl
+            }
+          } catch (uploadErr) {
+            // Continue even if upload fails
+            console.error('Upload error:', uploadErr)
+          }
+        }
+
+        // Create user profile
+        try {
+          const profileResult = await supabase
+            .from('user_profiles')
+            .insert({
+              id: userId,
+              email: signupResult.data.user.email,
+              username: username.trim(),
+              city: city.trim(),
+              full_name: '',
+              profile_picture: profilePictureUrl,
+              is_online: true
+            })
+
+          if (profileResult.error) {
+            safeSetError('Account created but profile failed to initialize. Please contact support.')
+            setLoading(false)
+            return
+          }
+
+          // Success!
+          navigate('/chat')
+        } catch (profileErr) {
+          safeSetError(interceptError(profileErr))
+          setLoading(false)
+        }
+      } catch (signupErr) {
+        safeSetError(interceptError(signupErr))
+        setLoading(false)
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.')
+      safeSetError(interceptError(err))
       setLoading(false)
     }
   }
@@ -487,6 +698,19 @@ function Signup() {
       {/* Signup Form */}
       <div className="flex-1 flex items-center justify-center p-4">
       <div className="frosted-glass rounded-2xl shadow-2xl p-10 w-full max-w-md border transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
+        {(() => {
+          const params = new URLSearchParams(window.location.search)
+          if (params.get('debug') === '1') {
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
+            return (
+              <div className="mb-6 text-xs p-3 rounded-lg" style={{ backgroundColor: 'var(--surface-light)', border: '1px solid var(--border)' }}>
+                <div>debug: url={supabaseUrl || 'n/a'}</div>
+                <div>preflight={preflightStatus || 'pending'}</div>
+              </div>
+            )
+          }
+          return null
+        })()}
         <div className="text-center mb-10">
           <div className="w-20 h-20 mx-auto mb-6 frosted-glass btn-rounded flex items-center justify-center">
             <svg className="w-10 h-10 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -504,7 +728,20 @@ function Signup() {
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {error}
+                {(() => {
+  // ABSOLUTE FINAL RENDER CHECK - NEVER show "Failed to fetch"
+  let displayError = String(error || '')
+  const lower = displayError.toLowerCase()
+
+  if (lower.includes('failed to fetch') ||
+      lower.includes('err_name_not_resolved') ||
+      lower.includes('networkerror') ||
+      lower === 'failed to fetch') {
+    displayError = '❌ Connection Error: Cannot connect to Supabase. Check if your project is active at https://supabase.com/dashboard'
+  }
+
+  return displayError
+})()}
               </div>
             </div>
           )}
@@ -530,16 +767,35 @@ function Signup() {
             <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-3">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-              className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring disabled:opacity-50"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+                className="w-full px-5 py-4 frosted-glass btn-rounded text-white placeholder-slate-400 focus-ring disabled:opacity-50 pr-12"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(v => !v)}
+                className="absolute inset-y-0 right-3 flex items-center text-slate-400 hover:text-slate-200"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M9.88 9.88A3 3 0 0112 9c1.657 0 3 1.343 3 3 0 .74-.267 1.417-.712 1.94M6.343 6.343C4.78 7.53 3.5 9.11 2.458 11.003a1.043 1.043 0 000 .994C4.55 16.117 8.013 18 12 18c1.57 0 3.06-.287 4.414-.81M15 15a3 3 0 01-3 3" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12.003C3.732 8.943 7.523 6 12 6c4.477 0 8.268 2.943 9.542 6.003a1.043 1.043 0 010 .994C20.268 16.057 16.477 19 12 19c-4.477 0-8.268-2.943-9.542-6.003a1.043 1.043 0 010-.994z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
           <div>
@@ -613,7 +869,7 @@ function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full frosted-glass btn-rounded-lg text-white py-4 text-lg font-semibold focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover-lift transition-all duration-200"
+            className="w-full frosted-glass btn-rounded-lg btn-glow text-white py-4 text-lg font-semibold focus-ring disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center hover-lift transition-all duration-200"
           >
             {loading ? (
               <>

@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import TwoFactorManagement from '../components/TwoFactorManagement'
 import { PasswordChange, UsernameChange, ThemeToggle, ReadReceiptsToggle } from '../components/SettingsSections'
 import { PageNavigation } from '../components/PageNavigation'
+import OnboardingTutorial from '../components/OnboardingTutorial'
 
 function Settings() {
   const { userProfile } = useAuth()
   const navigate = useNavigate()
+  const [showTutorial, setShowTutorial] = useState(false)
 
   return (
     <div className="min-h-screen transition-colors duration-300" style={{ backgroundColor: 'var(--background)', color: 'var(--text-primary)' }}>
@@ -51,6 +54,32 @@ function Settings() {
               >
                 Manage Templates →
               </button>
+            </div>
+          </div>
+
+          {/* Help & Support */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Help & Support</h2>
+            <div className="frosted-glass rounded-lg p-6 border" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>App Tutorial</h3>
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Learn how to use BuildFast Chat features</p>
+                  </div>
+                  <button
+                    onClick={() => setShowTutorial(true)}
+                    className="px-6 py-2 rounded-lg font-medium transition-all hover:scale-105"
+                    style={{
+                      background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                      color: 'white',
+                      boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)'
+                    }}
+                  >
+                    View Tutorial →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -139,6 +168,14 @@ function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Onboarding Tutorial Modal */}
+      {showTutorial && (
+        <OnboardingTutorial
+          onClose={() => setShowTutorial(false)}
+          isReplay={true}
+        />
+      )}
     </div>
   )
 }

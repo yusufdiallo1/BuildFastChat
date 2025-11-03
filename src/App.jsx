@@ -8,6 +8,7 @@ import ScheduledMessages from './pages/ScheduledMessages'
 import Settings from './pages/Settings'
 import MessageTemplates from './pages/MessageTemplates'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import TermsModal from './components/TermsModal'
 import './App.css'
 
 // Protected Route Component
@@ -32,6 +33,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <TermsModal />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

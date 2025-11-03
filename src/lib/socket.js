@@ -31,7 +31,12 @@ export const initSocket = (userId) => {
   })
 
   socketInstance.on('connect_error', (error) => {
-    console.error('Socket connection error:', error)
+    // Only log to console, don't show alerts - voice calling is optional
+    console.warn('⚠️ Socket.io connection failed (voice calling will be unavailable):', error.message)
+    console.info('💡 Voice calling requires a Socket.io backend server.')
+    console.info('💡 See VOICE_CALL_BACKEND_SETUP.md for setup instructions.')
+    console.info('💡 Server URL:', socketUrl)
+    console.info('💡 The app will continue to work normally without voice calling.')
   })
 
   return socketInstance
@@ -39,7 +44,9 @@ export const initSocket = (userId) => {
 
 export const getSocket = () => {
   if (!socketInstance) {
-    console.warn('Socket not initialized. Call initSocket() first.')
+    console.warn('⚠️ Socket not initialized. Voice calling will not work.')
+    console.warn('💡 Make sure you are logged in and the socket server is set up.')
+    console.warn('💡 See VOICE_CALL_BACKEND_SETUP.md for setup instructions.')
   }
   return socketInstance
 }

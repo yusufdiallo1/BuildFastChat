@@ -634,6 +634,58 @@ a:not(button):not(.btn):hover {
     0 0 40px rgba(99, 102, 241, 0.2);
 }
 
+/* Button Glow Effect - For major action buttons */
+.btn-glow:not(:disabled):not([disabled]) {
+  position: relative;
+  box-shadow: 
+    0 0 20px rgba(99, 102, 241, 0.5),
+    0 0 40px rgba(99, 102, 241, 0.3),
+    0 0 60px rgba(99, 102, 241, 0.2),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+  animation: button-glow-pulse 3s ease-in-out infinite;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glow:not(:disabled):not([disabled]):hover {
+  box-shadow: 
+    0 0 30px rgba(99, 102, 241, 0.7),
+    0 0 50px rgba(99, 102, 241, 0.5),
+    0 0 70px rgba(99, 102, 241, 0.3),
+    0 6px 20px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.btn-glow:not(:disabled):not([disabled]):active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 
+    0 0 15px rgba(99, 102, 241, 0.4),
+    0 0 30px rgba(99, 102, 241, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.btn-glow:disabled,
+.btn-glow[disabled] {
+  animation: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes button-glow-pulse {
+  0%, 100% {
+    box-shadow: 
+      0 0 20px rgba(99, 102, 241, 0.5),
+      0 0 40px rgba(99, 102, 241, 0.3),
+      0 0 60px rgba(99, 102, 241, 0.2),
+      0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(99, 102, 241, 0.6),
+      0 0 45px rgba(99, 102, 241, 0.4),
+      0 0 65px rgba(99, 102, 241, 0.3),
+      0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+}
+
 /* Scale on Hover */
 .scale-hover {
   transition: transform 0.2s ease;

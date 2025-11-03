@@ -49,7 +49,7 @@ function MessageOptionsMenu({
       }
     }
 
-    const scrollContainer = document.querySelector('.flex-1.overflow-y-auto')
+    const scrollContainer = document.querySelector('.message-list-container')
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', updatePosition)
       window.addEventListener('scroll', updatePosition)
