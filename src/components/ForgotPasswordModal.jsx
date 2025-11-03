@@ -85,14 +85,30 @@ function ForgotPasswordModal({ isOpen, onClose }) {
         return
       }
 
-      // Send email with code using Supabase Edge Function
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('send-password-reset-code', {
-        body: { email, code: resetCode }
-      })
+      // Send email with code using Edge Function (explicit Authorization to satisfy verify_jwt)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnon = import.meta.env.VITE_SUPABASE_ANON_KEY
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/send-password-reset-code`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseAnon}`,
+            'apikey': supabaseAnon,
+          },
+          body: JSON.stringify({ email, code: resetCode }),
+        })
 
-      if (functionError) {
-        console.error('Error calling Edge Function:', functionError)
-        // For development: log the code so user can still test
+        if (!res.ok) {
+          const text = await res.text().catch(() => '')
+          console.error('Edge Function error:', res.status, text)
+          console.log('Password reset code (for testing):', resetCode)
+          setError('Failed to send email. Please check your email or try again.')
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        console.error('Edge Function fetch failed:', err)
         console.log('Password reset code (for testing):', resetCode)
         setError('Failed to send email. Please check your email or try again.')
         setLoading(false)
@@ -171,13 +187,22 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     setLoading(true)
 
     try {
-      // Use Edge Function to update password (since we verified the code)
-      const { data: functionData, error: functionError } = await supabase.functions.invoke('reset-password-with-code', {
-        body: { email, newPassword }
+      // Use Edge Function to update password (explicit Authorization to satisfy verify_jwt)
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const supabaseAnon = import.meta.env.VITE_SUPABASE_ANON_KEY
+      const res = await fetch(`${supabaseUrl}/functions/v1/reset-password-with-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnon}`,
+          'apikey': supabaseAnon,
+        },
+        body: JSON.stringify({ email, newPassword }),
       })
 
-      if (functionError) {
-        setError(functionError.message || 'Unable to reset password. Please try again.')
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        setError(text || 'Unable to reset password. Please try again.')
         setLoading(false)
         return
       }
