@@ -33,7 +33,6 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <TermsModal />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />

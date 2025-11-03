@@ -5,6 +5,7 @@ import MainChat from './MainChat'
 import GlobalSearch from './GlobalSearch'
 import { useScheduledMessages } from '../hooks/useScheduledMessages'
 import { useAutoDeleteMessages } from '../hooks/useAutoDeleteMessages'
+import UpgradeProToast from './UpgradeProToast'
 
 function ChatLayout() {
   const [searchParams] = useSearchParams()
@@ -82,6 +83,7 @@ function ChatLayout() {
         isOpen={isGlobalSearchOpen}
         onClose={() => setIsGlobalSearchOpen(false)}
       />
+      <UpgradeProToast />
     </div>
   )
 }

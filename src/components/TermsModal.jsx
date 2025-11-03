@@ -35,9 +35,10 @@ function TermsModal() {
             .eq('id', user.id)
             .single()
 
-          if (error && error.code !== 'PGRST116') {
-            // PGRST116 = no rows returned, which is fine for new users
-            console.error('Error checking database terms:', error)
+          // If DB columns are missing or any error occurs, ignore and rely on localStorage
+          if (error) {
+            console.warn('Skipping DB terms check; using localStorage:', error)
+            return
           }
 
           // If database has acceptance, restore localStorage if needed
@@ -52,17 +53,11 @@ function TermsModal() {
               localStorage.setItem('termsVersion', data.terms_version || TERMS_VERSION)
             }
           } else if (data && !data.terms_accepted_date) {
-            // User profile exists but hasn't accepted terms in database
-            // Trust localStorage - if localStorage says accepted, that's fine
-            // But if version mismatch, show modal
-            if (storedVersion !== TERMS_VERSION) {
-              setShowModal(true)
-            }
+            // If DB row exists without terms fields, keep using localStorage
+            return
           }
-          // If no data found (PGRST116), trust localStorage
-        } catch (error) {
-          console.error('Error checking database terms:', error)
-          // On error, trust localStorage
+        } catch (err) {
+          console.warn('Terms DB check failed; continuing with localStorage:', err)
         }
       }
     }

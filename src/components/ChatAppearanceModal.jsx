@@ -83,8 +83,9 @@ function ChatAppearanceModal({ conversationId, isGroupChat, onClose }) {
         .eq('conversation_id', conversationId)
         .single()
 
+      // If any error occurs (including table missing/RLS/406), just ignore and fall back
       if (error && error.code !== 'PGRST116') {
-        throw error
+        console.warn('Appearance settings not available, falling back:', error)
       }
 
       if (data) {
@@ -127,8 +128,8 @@ function ChatAppearanceModal({ conversationId, isGroupChat, onClose }) {
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be less than 5MB')
+    if (file.size > 6 * 1024 * 1024) {
+      alert('Image must be less than 6MB')
       return
     }
 
@@ -654,7 +655,7 @@ function BackgroundImagesTab({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <p style={{ color: 'var(--text-secondary)' }}>Click to upload custom image</p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Max 5MB, JPG, PNG, GIF, WEBP</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Max 6MB, JPG, PNG, GIF, WEBP</p>
                     </div>
                   )}
                 </div>

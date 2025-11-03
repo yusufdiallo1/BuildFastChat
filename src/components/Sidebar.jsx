@@ -242,6 +242,26 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
                 <span>Scheduled Messages</span>
               </button>
               <button
+                onClick={() => navigate('/')}
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm frosted-glass btn-glow"
+                style={{ 
+                  color: 'var(--text-primary)',
+                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%)',
+                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.5)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.boxShadow = '0 0 20px rgba(139, 92, 246, 0.3)'
+                }}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span>Home</span>
+              </button>
+              <button
                 onClick={handleLogout}
                 className="flex items-center space-x-2 text-red-400 hover:text-red-300 px-2 py-2 rounded transition-colors text-sm"
               >

@@ -303,9 +303,10 @@ export function ThemeToggle() {
 
       setUserProfile({ ...userProfile, theme_preference: theme })
       document.documentElement.setAttribute('data-theme', theme)
+      // Theme updated successfully - no popup needed
     } catch (error) {
       console.error('Error updating theme:', error)
-      alert('Failed to update theme')
+      // Silently handle error - theme will revert on next page load
     } finally {
       setLoading(false)
     }
@@ -364,9 +365,10 @@ export function ReadReceiptsToggle() {
       if (error) throw error
 
       setUserProfile({ ...userProfile, send_read_receipts: !sendReadReceipts })
+      // Setting updated successfully - no popup needed
     } catch (error) {
       console.error('Error updating read receipts:', error)
-      alert('Failed to update read receipts setting')
+      // Silently handle error - setting will revert on next page load
     } finally {
       setLoading(false)
     }

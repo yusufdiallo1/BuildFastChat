@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import TwoFactorVerification from '../components/TwoFactorVerification'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 import { is2FAEnabled, isDeviceTrusted, getDeviceFingerprint } from '../utils/twoFactorAuth'
 
 function Login() {
@@ -12,6 +13,7 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [resetNotice, setResetNotice] = useState('')
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
   const [needs2FA, setNeeds2FA] = useState(false)
   const [userId, setUserId] = useState(null)
   const [userSecret, setUserSecret] = useState(null)
@@ -105,25 +107,8 @@ function Login() {
     }
   }
 
-  const handleForgotPassword = async () => {
-    setError('')
-    setResetNotice('')
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter your email address to reset your password.')
-      return
-    }
-    try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`
-      })
-      if (resetError) {
-        setError(resetError.message || 'Failed to send reset email. Please try again.')
-        return
-      }
-      setResetNotice('If this email exists, a password reset link has been sent.')
-    } catch (e) {
-      setError('Failed to send reset email. Please try again.')
-    }
+  const handleForgotPassword = () => {
+    setShowForgotPassword(true)
   }
 
   const handle2FASuccess = () => {
@@ -259,7 +244,11 @@ function Login() {
               </button>
             </div>
             <div className="mt-2 text-right">
-              <button type="button" onClick={handleForgotPassword} className="text-indigo-400 hover:text-indigo-300 text-sm">
+              <button 
+                type="button" 
+                onClick={handleForgotPassword} 
+                className="text-indigo-400 hover:text-indigo-300 text-sm font-semibold hover-lift transition-all duration-200"
+              >
                 Forgot password?
               </button>
             </div>
@@ -295,6 +284,12 @@ function Login() {
         </div>
       </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      <ForgotPasswordModal 
+        isOpen={showForgotPassword} 
+        onClose={() => setShowForgotPassword(false)} 
+      />
     </div>
   )
 }

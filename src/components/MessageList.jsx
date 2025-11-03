@@ -77,16 +77,15 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
           .eq('conversation_id', conversationId)
           .single()
 
-        // If no conversation-specific settings, try global
-        if (error && error.code === 'PGRST116') {
-          const { data: globalData } = await supabase
+        // If any error (including table missing/406), try global settings; if that fails too, just fall back
+        if (error) {
+          const globalRes = await supabase
             .from('chat_appearance_settings')
             .select('*')
             .eq('user_id', user.id)
             .eq('is_global', true)
             .single()
-          
-          data = globalData
+          data = globalRes.data || null
         }
 
         if (data) {
@@ -98,44 +97,67 @@ function MessageList({ conversationId, conversation, searchResults = [], searchQ
           if (stored) {
             const parsed = JSON.parse(stored)
             if (parsed.conversationId === conversationId || parsed.conversationId === 'global') {
+              setAppearanceSettings(parsed)
               applyAppearanceFromObject(parsed)
+            } else {
+              applyDefaultAppearance()
             }
           } else {
             applyDefaultAppearance()
           }
         }
       } catch (error) {
-        console.error('Error loading appearance settings:', error)
-        applyDefaultAppearance()
+        console.warn('Appearance settings not available; using defaults:', error)
+        // Fallback to defaults
+        const stored = localStorage.getItem('chatAppearanceSettings')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          setAppearanceSettings(parsed)
+          applyAppearanceFromObject(parsed)
+        } else {
+          applyDefaultAppearance()
+        }
+      } finally {
+        setLoading(false)
       }
     }
 
     loadAppearanceSettings()
-
-    // Listen for appearance settings updates
-    const channel = supabase
-      .channel(`appearance-${user.id}-${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'chat_appearance_settings',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.new.conversation_id === conversationId || payload.new.is_global) {
-            setAppearanceSettings(payload.new)
-            applyAppearanceSettings(payload.new)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      channel.unsubscribe()
-    }
   }, [conversationId, user])
+
+  useEffect(() => {
+    if (!user || !conversationId) return
+
+    try {
+      const channel = supabase
+        .channel(`appearance-settings-${user.id}-${conversationId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'chat_appearance_settings',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            // If change is for this conversation or global, apply immediately
+            const settings = payload.new
+            if (!settings) return
+            if (settings.is_global || settings.conversation_id === conversationId) {
+              applyAppearanceSettings(settings)
+              setAppearanceSettings(settings)
+            }
+          }
+        )
+        .subscribe()
+
+      return () => {
+        channel.unsubscribe()
+      }
+    } catch (e) {
+      console.warn('Realtime appearance subscription unavailable:', e)
+    }
+  }, [user?.id, conversationId])
 
   const applyAppearanceSettings = (settings) => {
     const messageList = document.querySelector('.message-list-container')

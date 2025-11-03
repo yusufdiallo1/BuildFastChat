@@ -29,8 +29,8 @@ if (!supabaseUrl || !supabaseAnonKey || !isUrlValid) {
   }
 }
 
-// Create a custom storage implementation using sessionStorage
-// sessionStorage is isolated per browser tab/window, allowing multiple accounts in different Arc spaces
+// Create a custom storage implementation using localStorage for persistent sessions
+// localStorage persists across browser refreshes (except hard refresh which clears all data)
 const getSessionStorage = () => {
   const prefix = 'sb-auth'
   
@@ -38,33 +38,33 @@ const getSessionStorage = () => {
     getItem: (key) => {
       try {
         const fullKey = `${prefix}_${key}`
-        return sessionStorage.getItem(fullKey)
+        return localStorage.getItem(fullKey)
       } catch (error) {
-        console.error('Error reading from sessionStorage:', error)
+        console.error('Error reading from localStorage:', error)
         return null
       }
     },
     setItem: (key, value) => {
       try {
         const fullKey = `${prefix}_${key}`
-        sessionStorage.setItem(fullKey, value)
+        localStorage.setItem(fullKey, value)
       } catch (error) {
-        console.error('Error writing to sessionStorage:', error)
+        console.error('Error writing to localStorage:', error)
       }
     },
     removeItem: (key) => {
       try {
         const fullKey = `${prefix}_${key}`
-        sessionStorage.removeItem(fullKey)
+        localStorage.removeItem(fullKey)
       } catch (error) {
-        console.error('Error removing from sessionStorage:', error)
+        console.error('Error removing from localStorage:', error)
       }
     },
     get length() {
       try {
         let count = 0
-        for (let i = 0; i < sessionStorage.length; i++) {
-          if (sessionStorage.key(i)?.startsWith(prefix)) {
+        for (let i = 0; i < localStorage.length; i++) {
+          if (localStorage.key(i)?.startsWith(prefix)) {
             count++
           }
         }
@@ -76,22 +76,22 @@ const getSessionStorage = () => {
     clear: () => {
       try {
         const keysToRemove = []
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i)
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
           if (key?.startsWith(prefix)) {
             keysToRemove.push(key)
           }
         }
-        keysToRemove.forEach(key => sessionStorage.removeItem(key))
+        keysToRemove.forEach(key => localStorage.removeItem(key))
       } catch (error) {
-        console.error('Error clearing sessionStorage:', error)
+        console.error('Error clearing localStorage:', error)
       }
     },
     key: (index) => {
       try {
         const keys = []
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i)
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
           if (key?.startsWith(prefix)) {
             keys.push(key)
           }
@@ -121,8 +121,8 @@ if (isValidCredentials) {
     supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage: getSessionStorage(),
-        autoRefreshToken: false, // Disable to prevent background calls that might fail
-        persistSession: false, // Disable to prevent session calls that might fail
+        autoRefreshToken: true, // Enable to keep sessions alive
+        persistSession: true, // Enable to persist sessions across refreshes
     detectSessionInUrl: false,
     flowType: 'pkce'
       },
