@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function UpgradeProToast() {
   const [visible, setVisible] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     const dismissed = localStorage.getItem('upgrade_pro_dismissed')
@@ -10,6 +12,17 @@ function UpgradeProToast() {
       return () => clearTimeout(t)
     }
   }, [])
+
+  const handleUpgrade = () => {
+    navigate('/')
+    // Scroll to pricing section after navigation
+    setTimeout(() => {
+      const pricingSection = document.getElementById('pricing')
+      if (pricingSection) {
+        pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
 
   if (!visible) return null
 
@@ -44,13 +57,13 @@ function UpgradeProToast() {
               Unlock high-quality uploads, message history, and priority support.
             </div>
             <div className="mt-3 flex space-x-2">
-              <a
-                href="#/upgrade"
+              <button
+                onClick={handleUpgrade}
                 className="px-4 py-2 rounded-lg text-sm font-medium"
                 style={{ backgroundColor: 'var(--primary)', color: 'white' }}
               >
                 Upgrade now
-              </a>
+              </button>
               <button
                 onClick={() => {
                   localStorage.setItem('upgrade_pro_dismissed', 'true')

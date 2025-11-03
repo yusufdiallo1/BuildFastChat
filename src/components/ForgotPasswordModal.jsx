@@ -15,6 +15,39 @@ function ForgotPasswordModal({ isOpen, onClose }) {
 
   if (!isOpen) return null
 
+  // Generate a unique 6-digit code
+  const generateUniqueCode = async () => {
+    let code
+    let attempts = 0
+    const maxAttempts = 10
+
+    while (attempts < maxAttempts) {
+      // Generate random 6-digit code
+      code = Math.floor(100000 + Math.random() * 900000).toString()
+
+      // Check if code already exists in database
+      const { data, error } = await supabase
+        .from('password_reset_codes')
+        .select('code')
+        .eq('code', code)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .single()
+
+      // If no existing code found, we can use this one
+      if (error && error.code === 'PGRST116') {
+        return code
+      }
+
+      // If code exists, try again
+      attempts++
+    }
+
+    // Fallback: if we can't find a unique code after max attempts, still return one
+    // (very unlikely but handles edge case)
+    return code || Math.floor(100000 + Math.random() * 900000).toString()
+  }
+
   const handleSendCode = async (e) => {
     e.preventDefault()
     setError('')
@@ -27,16 +60,41 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     }
 
     try {
-      const { error: otpError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}/login`
-        }
+      // Generate unique 6-digit code
+      const resetCode = await generateUniqueCode()
+
+      // Set expiration to 10 minutes from now
+      const expiresAt = new Date()
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10)
+
+      // Store code in database
+      const { error: insertError } = await supabase
+        .from('password_reset_codes')
+        .insert({
+          email,
+          code: resetCode,
+          expires_at: expiresAt.toISOString(),
+          used: false,
+          user_id: null // Will be set by Edge Function if user exists
+        })
+
+      if (insertError) {
+        console.error('Error storing code:', insertError)
+        setError('Failed to generate reset code. Please try again.')
+        setLoading(false)
+        return
+      }
+
+      // Send email with code using Supabase Edge Function
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('send-password-reset-code', {
+        body: { email, code: resetCode }
       })
 
-      if (otpError) {
-        setError(otpError.message || 'Failed to send code. Please try again.')
+      if (functionError) {
+        console.error('Error calling Edge Function:', functionError)
+        // For development: log the code so user can still test
+        console.log('Password reset code (for testing):', resetCode)
+        setError('Failed to send email. Please check your email or try again.')
         setLoading(false)
         return
       }
@@ -45,7 +103,7 @@ function ForgotPasswordModal({ isOpen, onClose }) {
       setSuccess(true)
     } catch (err) {
       setError('Failed to send code. Please try again.')
-      console.error('OTP send error:', err)
+      console.error('Send code error:', err)
     } finally {
       setLoading(false)
     }
@@ -63,24 +121,34 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     }
 
     try {
-      const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email,
-        token: code,
-        type: 'email'
-      })
+      // Verify code from database
+      const { data: codeData, error: verifyError } = await supabase
+        .from('password_reset_codes')
+        .select('*')
+        .eq('email', email)
+        .eq('code', code)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .single()
 
-      if (verifyError) {
-        setError(verifyError.message || 'Invalid code. Please try again.')
+      if (verifyError || !codeData) {
+        setError('Invalid or expired code. Please request a new code.')
         setLoading(false)
         return
       }
 
-      // We now have a session; allow password update
+      // Mark code as used
+      await supabase
+        .from('password_reset_codes')
+        .update({ used: true })
+        .eq('id', codeData.id)
+
+      // Code verified successfully - proceed to password reset step
       setStep(3)
       setSuccess(true)
     } catch (err) {
       setError('Verification failed. Please try again.')
-      console.error('Verify OTP error:', err)
+      console.error('Verify code error:', err)
     } finally {
       setLoading(false)
     }
@@ -103,15 +171,20 @@ function ForgotPasswordModal({ isOpen, onClose }) {
     setLoading(true)
 
     try {
-      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+      // Use Edge Function to update password (since we verified the code)
+      const { data: functionData, error: functionError } = await supabase.functions.invoke('reset-password-with-code', {
+        body: { email, newPassword }
+      })
 
-      if (updateError) {
-        setError(updateError.message || 'Unable to reset password. Please try again.')
+      if (functionError) {
+        setError(functionError.message || 'Unable to reset password. Please try again.')
         setLoading(false)
         return
       }
 
-      setStep(4) // Success step
+      // Password reset successful
+      setStep(4)
+      setSuccess(true)
       setTimeout(() => {
         onClose()
         // Reset state

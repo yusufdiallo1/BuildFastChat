@@ -200,12 +200,24 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
                   console.log('Navigating to settings page...')
                   navigate('/settings')
                 }}
-                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm settings-btn"
                 style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                onMouseEnter={(e) => {
+                  e.target.style.color = 'var(--text-primary)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.add('gear-spinning')
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = 'var(--text-muted)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.remove('gear-spinning')
+                  }
+                }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 gear-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transformOrigin: 'center' }}>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -216,13 +228,26 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
                   console.log('Navigating to blocked users page...')
                   navigate('/blocked-users')
                 }}
-                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm blocked-users-btn"
                 style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                onMouseEnter={(e) => {
+                  e.target.style.color = 'var(--text-primary)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.add('umbrella-animating')
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = 'var(--text-muted)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.remove('umbrella-animating')
+                  }
+                }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L18.364 5.636M5.636 18.364l12.728-12.728" />
+                <svg className="w-5 h-5 umbrella-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transformOrigin: 'center' }}>
+                  <path id="umbrella-top" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2.69l5.66 5.66a8 8 0 11-11.32 0z" style={{ transformOrigin: '12px 12px' }} />
+                  <path id="umbrella-handle" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v10M9 21h6" />
                 </svg>
                 <span>Blocked Users</span>
               </button>
@@ -231,45 +256,69 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
                   console.log('Navigating to scheduled messages page...')
                   navigate('/scheduled-messages')
                 }}
-                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm"
+                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm scheduled-messages-btn"
                 style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => e.target.style.color = 'var(--text-primary)'}
-                onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                onMouseEnter={(e) => {
+                  e.target.style.color = 'var(--text-primary)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.add('clock-spinning')
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = 'var(--text-muted)'
+                  const svg = e.currentTarget.querySelector('svg')
+                  if (svg) {
+                    svg.classList.remove('clock-spinning')
+                  }
+                }}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg className="w-5 h-5 clock-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ transformOrigin: 'center' }}>
+                  <circle cx="12" cy="12" r="10" strokeWidth="2" fill="none" />
+                  <line id="minute-hand" x1="12" y1="12" x2="12" y2="6" strokeWidth="2.5" strokeLinecap="round" stroke="currentColor" style={{ transformOrigin: '12px 12px' }} />
+                  <line id="hour-hand" x1="12" y1="12" x2="12" y2="9" strokeWidth="2.5" strokeLinecap="round" stroke="currentColor" style={{ transformOrigin: '12px 12px' }} />
                 </svg>
                 <span>Scheduled Messages</span>
               </button>
-              <button
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2 px-2 py-2 rounded transition-colors text-sm frosted-glass btn-glow"
-                style={{ 
-                  color: 'var(--text-primary)',
-                  background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%)',
-                  boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.5)'
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.boxShadow = '0 0 20px rgba(139, 92, 246, 0.3)'
-                }}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                <span>Home</span>
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 text-red-400 hover:text-red-300 px-2 py-2 rounded transition-colors text-sm"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                <span>Logout</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <div
+                  onClick={() => navigate('/')}
+                  className="home-icon-container"
+                  style={{ 
+                    cursor: 'pointer',
+                    padding: '8px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%)',
+                    boxShadow: '0 0 20px rgba(139, 92, 246, 0.3)',
+                    transition: 'all 0.3s ease',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 30px rgba(139, 92, 246, 0.6), 0 0 40px rgba(236, 72, 153, 0.4)'
+                    e.currentTarget.style.transform = 'scale(1.1)'
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.6)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 0 20px rgba(139, 92, 246, 0.3)'
+                    e.currentTarget.style.transform = 'scale(1)'
+                    e.currentTarget.style.borderColor = 'rgba(139, 92, 246, 0.3)'
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'var(--text-primary)' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center space-x-2 text-red-400 hover:text-red-300 px-2 py-2 rounded transition-colors text-sm"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Logout</span>
+                </button>
+              </div>
             </nav>
           </div>
         )}

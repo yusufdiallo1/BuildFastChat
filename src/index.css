@@ -978,3 +978,68 @@ a:not(button):not(.btn):hover {
     margin-bottom: 3rem;
   }
 }
+
+/* Clock spinning animation */
+.clock-spinning #minute-hand {
+  animation: spin-minute 3s linear infinite;
+  transform-origin: center;
+}
+
+.clock-spinning #hour-hand {
+  animation: spin-hour 36s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes spin-minute {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin-hour {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Gear spinning animation */
+.gear-spinning {
+  animation: spin-gear 2s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes spin-gear {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Umbrella open/close animation */
+.umbrella-animating #umbrella-top {
+  animation: umbrella-open-close 1.2s ease-in-out infinite;
+  transform-origin: 12px 12px;
+}
+
+@keyframes umbrella-open-close {
+  0% {
+    transform: scaleY(0.2) scaleX(0.8) translateY(30%);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scaleY(1.1) scaleX(1) translateY(-5%);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0.2) scaleX(0.8) translateY(30%);
+    opacity: 0.6;
+  }
+}
