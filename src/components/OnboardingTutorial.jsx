@@ -87,7 +87,10 @@ function OnboardingTutorial({ onClose, isReplay = false }) {
       }
 
       // Call backend API to create Stripe customer portal session
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
+      const backendEnv = import.meta.env.VITE_BACKEND_URL
+      const backendUrl = backendEnv && backendEnv.trim() !== ''
+        ? backendEnv
+        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')
       
       const response = await fetch(`${backendUrl}/api/stripe/create-portal-session`, {
         method: 'POST',
@@ -97,7 +100,8 @@ function OnboardingTutorial({ onClose, isReplay = false }) {
         },
         body: JSON.stringify({
           userId: user.id,
-          returnUrl: `${window.location.origin}/settings`
+          returnUrl: `${window.location.origin}/settings`,
+          customerEmail: user.email || undefined
         })
       })
 

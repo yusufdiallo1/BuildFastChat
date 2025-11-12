@@ -12,6 +12,21 @@ function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false)
   const [checkoutLoading, setCheckoutLoading] = useState(false)
 
+  const closeMobileMenu = () => setMobileMenuOpen(false)
+  const toggleMobileMenu = () => setMobileMenuOpen(prev => !prev)
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileMenuOpen])
+
   const handleProCheckout = async () => {
     if (!user) {
       alert('Please log in to subscribe to Pro plan')
@@ -30,7 +45,10 @@ function Home() {
       }
 
       // Get backend URL from environment or use default
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
+      const backendEnv = import.meta.env.VITE_BACKEND_URL
+      const backendUrl = backendEnv && backendEnv.trim() !== ''
+        ? backendEnv
+        : (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173')
       
       // Get Stripe Price ID from environment or use placeholder
       const proPriceId = import.meta.env.VITE_STRIPE_PRO_PRICE_ID
@@ -242,9 +260,9 @@ Please:
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: 'fadeInNav 0.6s ease-out 0.2s both'
       }}>
-        <div className="flex items-center justify-center" style={{ gap: '12px', position: 'relative' }}>
+        <div className="flex items-center justify-between w-full" style={{ gap: '12px', position: 'relative' }}>
           {/* Logo Section (Left) */}
-          <div style={{ position: 'absolute', left: '20px', display: 'flex', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
             <span className="text-xl font-semibold">
               <span className="gradient-text" style={{ 
                 background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
@@ -256,8 +274,8 @@ Please:
             </span>
             </div>
 
-          {/* Navigation Buttons (Center) */}
-          <nav className={`flex items-center ${mobileMenuOpen ? 'mobile-menu-open' : ''}`} style={{ gap: '12px', marginLeft: '8px' }}>
+          {/* Navigation Buttons */}
+          <nav className="flex items-center justify-center flex-1" style={{ gap: '12px', marginLeft: '8px' }}>
             <Link 
               to="/" 
               className={`nav-pill-button ${location.pathname === '/' ? 'active' : ''}`}
@@ -441,8 +459,95 @@ Please:
               Chat
             </Link>
             </nav>
+          {/* Mobile Hamburger Toggle */}
+          <button
+            type="button"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            onClick={toggleMobileMenu}
+            className={`hamburger-menu${mobileMenuOpen ? ' active' : ''}`}
+          >
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
         </div>
       </header>
+
+      {/* Mobile Slide-in Menu */}
+      {mobileMenuOpen && (
+        <div className="mobile-menu-backdrop" onClick={closeMobileMenu}>
+          <div
+            className="mobile-menu-panel"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mobile-menu-header">
+              <span>Menu</span>
+              <button
+                type="button"
+                aria-label="Close navigation menu"
+                onClick={closeMobileMenu}
+                className="mobile-menu-close"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M6 18L18 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div className="mobile-menu-items">
+              <Link to="/" onClick={closeMobileMenu} className={`mobile-menu-link${location.pathname === '/' ? ' active' : ''}`}>
+                Home
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileMenu()
+                  const testimonialsSection = document.getElementById('testimonials')
+                  if (testimonialsSection) {
+                    testimonialsSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+                className="mobile-menu-link"
+              >
+                Testimonials
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  closeMobileMenu()
+                  const pricingSection = document.getElementById('pricing')
+                  if (pricingSection) {
+                    pricingSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  }
+                }}
+                className="mobile-menu-link"
+              >
+                Pricing
+              </button>
+              <Link to="/chat" onClick={closeMobileMenu} className={`mobile-menu-link${location.pathname === '/chat' ? ' active' : ''}`}>
+                Chat
+              </Link>
+              {user ? (
+                <button
+                  type="button"
+                  className="mobile-menu-cta"
+                  onClick={() => {
+                    closeMobileMenu()
+                    handleProCheckout()
+                  }}
+                  disabled={checkoutLoading}
+                >
+                  {checkoutLoading ? 'Processing…' : 'Upgrade to Pro'}
+                </button>
+              ) : (
+                <Link to="/login" onClick={closeMobileMenu} className="mobile-menu-cta secondary">
+                  Log In
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section - Redesigned */}
       <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden" style={{ paddingTop: '100px' }}>
