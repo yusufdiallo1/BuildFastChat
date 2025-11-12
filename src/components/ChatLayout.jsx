@@ -70,7 +70,7 @@ function ChatLayout() {
   }, [selectedConversationId, showArchived])
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden">
+    <div className="chat-layout flex h-screen w-screen overflow-hidden">
       <Sidebar 
         selectedConversationId={selectedConversationId}
         onConversationSelect={setSelectedConversationId}

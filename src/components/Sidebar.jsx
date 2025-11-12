@@ -86,7 +86,7 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
 
   return (
     <>
-      <aside className="w-64 border-r flex flex-col transition-colors duration-300" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
+      <aside className="chat-sidebar w-64 border-r flex flex-col transition-colors duration-300" style={{ backgroundColor: 'var(--surface)', borderColor: 'var(--border)' }}>
         {/* Sidebar Header */}
         <div className="p-4 border-b transition-colors duration-300" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between mb-4">
@@ -164,11 +164,13 @@ function Sidebar({ selectedConversationId, onConversationSelect, onGlobalSearch,
         </div>
 
         {/* Conversation List */}
-        <UserSidebar 
-          selectedConversationId={selectedConversationId}
-          onConversationSelect={onConversationSelect}
-          showArchived={showArchived}
-        />
+        <div className="conversation-list flex-1 overflow-hidden">
+          <UserSidebar 
+            selectedConversationId={selectedConversationId}
+            onConversationSelect={onConversationSelect}
+            showArchived={showArchived}
+          />
+        </div>
 
         {/* User Info Section at Bottom */}
         {user && (

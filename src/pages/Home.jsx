@@ -655,20 +655,20 @@ Please:
               </div>
 
               {/* Feature Highlights */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 hero-features" style={{ animation: 'fade-in-up 0.6s ease-out 0.6s forwards' }}>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift" style={{ backgroundColor: 'var(--surface)' }}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12 hero-features feature-grid" style={{ animation: 'fade-in-up 0.6s ease-out 0.6s forwards' }}>
+                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift feature-card" style={{ backgroundColor: 'var(--surface)' }}>
                   <div className="text-3xl mb-2">⚡</div>
                   <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Real-time</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift" style={{ backgroundColor: 'var(--surface)' }}>
+                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift feature-card" style={{ backgroundColor: 'var(--surface)' }}>
                   <div className="text-3xl mb-2">📸</div>
                   <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Image sharing</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift" style={{ backgroundColor: 'var(--surface)' }}>
+                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift feature-card" style={{ backgroundColor: 'var(--surface)' }}>
                   <div className="text-3xl mb-2">🎤</div>
                   <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Voice messages</span>
                 </div>
-                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift" style={{ backgroundColor: 'var(--surface)' }}>
+                <div className="flex flex-col items-center text-center p-4 rounded-xl hover-lift feature-card" style={{ backgroundColor: 'var(--surface)' }}>
                   <div className="text-3xl mb-2">👍</div>
                   <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Reactions</span>
                 </div>
@@ -745,9 +745,9 @@ Please:
           <p className="text-xl" style={{ color: 'var(--text-muted)' }}>Everything you need for modern communication</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 feature-grid">
           {features.map((feature, index) => (
-            <div key={index} className="frosted-glass rounded-2xl p-8 hover-lift transition-all duration-200 border" style={{ borderColor: 'var(--border)' }}>
+            <div key={index} className="frosted-glass rounded-2xl p-8 hover-lift transition-all duration-200 border feature-card" style={{ borderColor: 'var(--border)' }}>
               <div className="frosted-glass rounded-xl w-20 h-20 flex items-center justify-center mb-6 text-indigo-400 mx-auto">
                 {feature.icon}
               </div>
